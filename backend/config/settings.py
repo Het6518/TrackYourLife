@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'days',  # This is the custom app we created for handling daily entries.
 ]
 
 MIDDLEWARE = [
