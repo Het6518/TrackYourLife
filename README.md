@@ -40,13 +40,13 @@ frontend/
 cd backend
 python -m venv venv
 venv\Scripts\activate          # macOS/Linux: source venv/bin/activate
-pip install django djangorestframework django-cors-headers psycopg2-binary
+pip install -r requirements.txt
 python manage.py migrate
 python manage.py seed_demo     # optional demo data
 python manage.py runserver
 ```
 
-The API runs at http://127.0.0.1:8000/api. `psycopg2-binary` is only needed for PostgreSQL.
+The API runs at http://127.0.0.1:8000/api. `psycopg2-binary` in `requirements.txt` is only used with PostgreSQL.
 
 ### Frontend
 
@@ -56,12 +56,14 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (http://127.0.0.1:5173 by default). The API base URL is set in [frontend/src/api/client.js](frontend/src/api/client.js).
+Open the URL Vite prints (http://127.0.0.1:5173 by default). The API base URL defaults to `http://127.0.0.1:8000/api`; override it with `VITE_API_URL` (see `frontend/.env.example`).
 
 ## Configuration
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
+| `DJANGO_SECRET_KEY` | Required when `DJANGO_DEBUG` is not `True` | insecure dev key |
+| `DJANGO_DEBUG` | Debug mode | `True` |
 | `DJANGO_ALLOWED_HOSTS` | Comma-separated allowed hosts | `localhost,127.0.0.1,testserver` |
 | `POSTGRES_DB` | Enables PostgreSQL when set | unset (SQLite) |
 | `POSTGRES_USER` | Database user | `postgres` |

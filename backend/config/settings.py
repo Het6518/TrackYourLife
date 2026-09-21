@@ -12,6 +12,9 @@ SECRET_KEY = os.environ.get(
     "django-insecure-o9rdm3c(nr*o!7okl1dvd2^u^fa7gq2xm@#j)2hr#t0u*s%0h%",
 )
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
+
+if not DEBUG and SECRET_KEY.startswith("django-insecure-"):
+    raise RuntimeError("Set DJANGO_SECRET_KEY when DJANGO_DEBUG is not True.")
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
 
 INSTALLED_APPS = [
