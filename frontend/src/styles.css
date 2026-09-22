@@ -615,6 +615,20 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
 .music-bar { display: flex; align-items: center; gap: 10px; border-radius: 999px; background: var(--panel-strong); backdrop-filter: blur(16px); border: 1px solid var(--panel-border); padding: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.45); }
 .music-bar-toggle { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--white); padding: 0; }
 .music-bar-art { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 8px; object-fit: cover; }
+/* NOTE: this must stay real-size/visible while YT.Player is constructed —
+   building it inside a display:none (or 0-size) container makes YouTube's
+   IFrame API silently never fire onReady in many browsers, which is why
+   playback did nothing before: ytReady never became true, so every play
+   click was a no-op. `opacity` + `position:absolute` hides it visually and
+   removes it from the flex layout without ever collapsing its real size. */
+/* NOTE: keep this at real, visible dimensions (matches the 284x160 passed
+   to `new YT.Player(...)`) — shrinking it down (it used to be 34x34) is a
+   known trigger for YouTube/Chrome to silently auto-pause playback a
+   couple seconds in. `.hidden` hides it visually and removes it from flow
+   via opacity/position, WITHOUT ever collapsing its actual rendered size. */
+.music-yt-preview { width: 284px; max-width: calc(100vw - 32px); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); line-height: 0; }
+.music-yt-preview.hidden { opacity: 0; position: absolute; pointer-events: none; }
+.music-yt-preview iframe { width: 100% !important; }
 .music-bar-info { flex: 1; min-width: 0; display: grid; cursor: pointer; }
 .music-bar-info strong { font-size: 12.5px; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .music-bar-info small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -633,7 +647,9 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
 .music-search-bar { display: flex; align-items: center; gap: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border); padding: 8px 14px; color: var(--muted); }
 .music-search-bar input { flex: 1; border: 0; background: transparent; color: var(--white); outline: none; padding: 0; font-size: 13px; }
 .music-list { display: grid; gap: 6px; overflow-y: auto; max-height: 220px; }
-.music-row { display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 6px 8px; }
+.music-row { display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 6px 8px; cursor: pointer; }
+.music-row:hover { background: rgba(255,255,255,0.06); }
+.music-row.disabled { cursor: not-allowed; opacity: 0.6; }
 .music-row.active { background: rgba(255,255,255,0.08); }
 .music-row-play { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid var(--panel-border); border-radius: 50%; background: rgba(255,255,255,0.05); color: var(--white); padding: 0; }
 .music-row-art { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 6px; object-fit: cover; }
