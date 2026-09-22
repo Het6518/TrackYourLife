@@ -83,4 +83,36 @@ export function applyTheme(theme) {
   root.style.setProperty("--bg-image", `url(${theme.image})`);
 }
 
+// Blends a #rrggbb color toward white — used to derive the lighter
+// "--orange-2" tint from a single accent color the user picks.
+function lighten(hex, amount) {
+  const num = parseInt(hex.slice(1), 16);
+  const channel = (shift) => {
+    const value = (num >> shift) & 255;
+    return Math.round(value + (255 - value) * amount);
+  };
+  return `#${[channel(16), channel(8), channel(0)].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+// Applies a user's personal overrides (custom background photo and/or
+// accent color) on top of whatever the automatic weather theme set — always
+// called again whenever the weather theme changes, so personalization keeps
+// winning instead of being clobbered by the next weather update. Passing no
+// user, or a user with neither field set, is a no-op / clears any override.
+export function applyPersonalization(user) {
+  const root = document.documentElement;
+
+  if (user?.theme_background_url) {
+    root.style.setProperty("--bg-image", `url(${user.theme_background_url})`);
+  }
+
+  if (user?.theme_accent_color) {
+    root.style.setProperty("--orange", user.theme_accent_color);
+    root.style.setProperty("--orange-2", lighten(user.theme_accent_color, 0.35));
+  } else {
+    root.style.removeProperty("--orange");
+    root.style.removeProperty("--orange-2");
+  }
+}
+
 export { THEMES };

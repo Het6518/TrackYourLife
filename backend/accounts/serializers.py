@@ -4,7 +4,13 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import avatar_url_for, board_background_for, location_for
+from .models import (
+    avatar_url_for,
+    board_background_for,
+    location_for,
+    theme_accent_color_for,
+    theme_background_url_for,
+)
 
 HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
@@ -13,10 +19,15 @@ class UserSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     board_background = serializers.SerializerMethodField()
+    theme_background_url = serializers.SerializerMethodField()
+    theme_accent_color = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "avatar_url", "location", "board_background"]
+        fields = [
+            "id", "username", "email", "avatar_url", "location", "board_background",
+            "theme_background_url", "theme_accent_color",
+        ]
 
     def get_avatar_url(self, user):
         return avatar_url_for(user, self.context.get("request"))
@@ -26,6 +37,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_board_background(self, user):
         return board_background_for(user)
+
+    def get_theme_background_url(self, user):
+        return theme_background_url_for(user, self.context.get("request"))
+
+    def get_theme_accent_color(self, user):
+        return theme_accent_color_for(user)
 
 
 class LocationSerializer(serializers.Serializer):
@@ -43,6 +60,7 @@ class BoardStyleSerializer(serializers.Serializer):
 
 
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
+MAX_THEME_BACKGROUND_BYTES = 8 * 1024 * 1024
 
 
 class AvatarSerializer(serializers.Serializer):
@@ -52,6 +70,25 @@ class AvatarSerializer(serializers.Serializer):
         if image.size > MAX_AVATAR_BYTES:
             raise serializers.ValidationError("Avatar must be 2 MB or smaller.")
         return image
+
+
+class ThemeBackgroundSerializer(serializers.Serializer):
+    background = serializers.ImageField()
+
+    def validate_background(self, image):
+        if image.size > MAX_THEME_BACKGROUND_BYTES:
+            raise serializers.ValidationError("Background image must be 8 MB or smaller.")
+        return image
+
+
+class ThemeAccentSerializer(serializers.Serializer):
+    # blank string means "clear it — go back to the automatic weather accent"
+    accent_color = serializers.CharField(max_length=7, allow_blank=True)
+
+    def validate_accent_color(self, value):
+        if value and not HEX_COLOR_RE.match(value):
+            raise serializers.ValidationError("Must be blank or a #rrggbb color.")
+        return value
 
 
 class RegisterSerializer(serializers.ModelSerializer):

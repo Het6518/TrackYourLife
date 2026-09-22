@@ -9,6 +9,7 @@ import MomentumCard from "../components/MomentumCard";
 import RecentEntries from "../components/RecentEntries";
 import SearchBar from "../components/SearchBar";
 import Shell from "../components/Shell";
+import SignatureGreeting from "../components/SignatureGreeting";
 import SolarActivityCard from "../components/SolarActivityCard";
 import Trends from "../components/Trends";
 import ViewCard from "../components/ViewCard";
@@ -118,6 +119,7 @@ export default function DashboardPage({ token, user, onLogout, onUserChange, nav
 
         <div className="hero-wrap">
           <section className="hero">
+            <SignatureGreeting username={user.username} />
             <div className="hero-top">
               <h1>{today ? `Today is a ${today.score}/10` : "How was today?"}</h1>
               <p>{today?.note ? truncateNote(today.note) : "Pick a day on the map, or write below to log today."}</p>
