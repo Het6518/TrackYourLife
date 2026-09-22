@@ -7,7 +7,7 @@ export default function Trends({ days }) {
   });
 
   return (
-    <section className="glass-panel trends-panel">
+    <section className="panel dark trends-panel">
       <div className="section-heading">
         <div>
           <p className="eyebrow">Signal</p>
@@ -17,7 +17,7 @@ export default function Trends({ days }) {
       </div>
       {points.length > 1 ? (
         <svg className="trend-chart" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Recent score trend">
-          <polyline points={points.join(" ")} fill="none" stroke="#14b8a6" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+          <polyline points={points.join(" ")} fill="none" stroke="#f26a21" strokeWidth="3" vectorEffect="non-scaling-stroke" />
         </svg>
       ) : (
         <div className="empty-chart">Add a few entries to see your trend.</div>

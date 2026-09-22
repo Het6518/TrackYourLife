@@ -2,11 +2,30 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from .models import avatar_url_for
+
 
 class UserSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "username", "email"]
+        fields = ["id", "username", "email", "avatar_url"]
+
+    def get_avatar_url(self, user):
+        return avatar_url_for(user, self.context.get("request"))
+
+
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
+
+
+class AvatarSerializer(serializers.Serializer):
+    avatar = serializers.ImageField()
+
+    def validate_avatar(self, image):
+        if image.size > MAX_AVATAR_BYTES:
+            raise serializers.ValidationError("Avatar must be 2 MB or smaller.")
+        return image
 
 
 class RegisterSerializer(serializers.ModelSerializer):

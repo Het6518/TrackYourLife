@@ -1,19 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import AppHeader from "../components/AppHeader";
+import { Download } from "lucide-react";
 import DayModal from "../components/DayModal";
-import EntryForm from "../components/EntryForm";
+import EntryStack from "../components/EntryStack";
+import InspireCard from "../components/InspireCard";
+import PromptBar from "../components/PromptBar";
 import RecentEntries from "../components/RecentEntries";
+import ScoreCard from "../components/ScoreCard";
+import SearchBar from "../components/SearchBar";
+import Shell from "../components/Shell";
 import Trends from "../components/Trends";
 import YearHeatmap from "../components/YearHeatmap";
 import { daysApi } from "../api/client";
-import { averageScore, bestStreak, todayIso } from "../utils/date";
+import { averageScore, bestStreak, dayToIso, todayIso } from "../utils/date";
+import { downloadCsv } from "../utils/export";
 
 const freshForm = (date = todayIso()) => ({ date, score: 7, note: "", is_public: false });
 
-export default function DashboardPage({ token, user, onLogout, navigate }) {
+export default function DashboardPage({ token, user, onLogout, onUserChange, navigate }) {
   const [days, setDays] = useState([]);
+  const [publicUsers, setPublicUsers] = useState([]);
   const [form, setForm] = useState(freshForm());
   const [selectedDay, setSelectedDay] = useState(null);
+  const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const year = new Date().getFullYear();
 
@@ -25,13 +33,33 @@ export default function DashboardPage({ token, user, onLogout, navigate }) {
     publicCount: days.filter((day) => day.is_public).length,
   }), [days]);
 
+  const filtered = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return days;
+    return days.filter((day) => day.note.toLowerCase().includes(term) || day.date.includes(term));
+  }, [days, query]);
+
+  const week = useMemo(() => {
+    const logged = new Set(days.map((day) => day.date));
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - index));
+      return logged.has(dayToIso(date));
+    });
+  }, [days]);
+
   async function loadDays() {
     setDays(await daysApi.list(token));
   }
 
   useEffect(() => {
     loadDays().catch((err) => setError(err.message));
+    daysApi.publicUsers().then(setPublicUsers).catch(() => setPublicUsers([]));
   }, []);
+
+  function focusPrompt() {
+    document.getElementById("prompt-input")?.focus();
+  }
 
   function selectDate(date, day) {
     if (day) {
@@ -40,13 +68,13 @@ export default function DashboardPage({ token, user, onLogout, navigate }) {
     }
     setSelectedDay(null);
     setForm(freshForm(date));
-    document.getElementById("log-entry")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    focusPrompt();
   }
 
   function editDay(day) {
     setForm({ id: day.id, date: day.date, score: day.score, note: day.note, is_public: day.is_public });
     setSelectedDay(null);
-    document.getElementById("log-entry")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    focusPrompt();
   }
 
   async function save(event) {
@@ -71,41 +99,45 @@ export default function DashboardPage({ token, user, onLogout, navigate }) {
   }
 
   return (
-    <main className="page-shell dashboard-page">
-      <AppHeader user={user} isPublic={stats.publicCount > 0} onExplore={() => navigate("explore")} onLogout={onLogout} />
-
-      <section className="hero-board">
-        <div>
-          <p className="eyebrow">Your Daymap</p>
-          <h1>{today ? `Today is a ${today.score}/10` : "How was today?"}</h1>
-          <p>{today?.note || "Click a heatmap day to inspect it, or pick an empty date to add a new entry."}</p>
+    <Shell active="dashboard" user={user} token={token} navigate={navigate} onLogout={onLogout} onUserChange={onUserChange}>
+      <div className="stage-grid">
+        <div className="hero-wrap">
+          <section className="hero">
+            <div className="hero-top">
+              <p className="eyebrow">Your Daymap · {year}</p>
+              <h1>{today ? `Today is a ${today.score}/10` : "How was today?"}</h1>
+              <p>{today?.note || "Pick a day on the map, or write a note below to log today."}</p>
+              <div className="stat-chips">
+                <span><b>{stats.entries}</b> logged</span>
+                <span><b>{stats.average}</b> average</span>
+                <span><b>{stats.streak}d</b> best streak</span>
+                <span><b>{stats.publicCount}</b> public</span>
+              </div>
+            </div>
+            <div className="heat-card">
+              <YearHeatmap days={days} year={year} onSelectDate={selectDate} />
+            </div>
+            <PromptBar form={form} setForm={setForm} onSave={save} onDelete={remove} error={error} />
+          </section>
+          <button className="notch-button" onClick={() => downloadCsv(days)} title="Download your entries (CSV)" aria-label="Download your entries as CSV">
+            <Download size={20} />
+          </button>
+          <ScoreCard form={form} setForm={setForm} week={week} />
         </div>
-        <div className="hero-metrics">
-          <article><span>Logged</span><strong>{stats.entries}</strong></article>
-          <article><span>Average</span><strong>{stats.average}</strong></article>
-          <article><span>Best streak</span><strong>{stats.streak}d</strong></article>
+
+        <div className="side">
+          <SearchBar value={query} onChange={setQuery} placeholder="Search notes or dates" />
+          <EntryStack entries={filtered} onSelect={setSelectedDay} empty={query ? "No entries match your search." : "Your saved entries will appear here."} />
+          <InspireCard users={publicUsers} onOpen={() => navigate("explore")} />
         </div>
-      </section>
+      </div>
 
-      <section className="glass-panel heatmap-panel">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Year View</p>
-            <h2>{year} calendar</h2>
-          </div>
-          <div className="streak-pill">{stats.publicCount} public entries</div>
-        </div>
-        <YearHeatmap days={days} year={year} onSelectDate={selectDate} />
-      </section>
-
-      <Trends days={days} />
-
-      <section className="dashboard-grid" id="log-entry">
-        <EntryForm form={form} setForm={setForm} onSave={save} onDelete={remove} error={error} />
-        <RecentEntries days={days} onSelect={setSelectedDay} />
+      <section className="lower" id="lower">
+        <Trends days={days} />
+        <RecentEntries days={filtered} onSelect={setSelectedDay} />
       </section>
 
       <DayModal day={selectedDay} days={days} onClose={() => setSelectedDay(null)} onEdit={editDay} onSelectDay={setSelectedDay} />
-    </main>
+    </Shell>
   );
 }

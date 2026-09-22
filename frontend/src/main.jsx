@@ -84,9 +84,10 @@ function App() {
 
   if (loading) return <main className="loading">Loading...</main>;
   if (!token || !user) return <AuthPage onAuth={onAuth} />;
-  if (route.page === "explore") return <ExplorePage navigate={navigate} />;
-  if (route.page === "profile") return <PublicProfilePage username={route.username} navigate={navigate} />;
-  return <DashboardPage token={token} user={user} onLogout={logout} navigate={navigate} />;
+  const shell = { user, token, onLogout: logout, onUserChange: setUser };
+  if (route.page === "explore") return <ExplorePage navigate={navigate} {...shell} />;
+  if (route.page === "profile") return <PublicProfilePage username={route.username} navigate={navigate} {...shell} />;
+  return <DashboardPage token={token} user={user} onLogout={logout} onUserChange={setUser} navigate={navigate} />;
 }
 
 createRoot(document.getElementById("root")).render(<App />);

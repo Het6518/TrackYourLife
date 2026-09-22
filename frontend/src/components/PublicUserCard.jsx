@@ -1,3 +1,4 @@
+import Avatar from "./Avatar";
 import { averageScore, scoreLevel } from "../utils/date";
 
 function lastSevenDays(days) {
@@ -14,12 +15,11 @@ export default function PublicUserCard({ user, days, onOpen }) {
   const week = lastSevenDays(days);
   const logged = week.filter((day) => day.id).length;
   const avg = averageScore(days);
-  const initials = user.username.slice(0, 2).toUpperCase();
 
   return (
     <button className="public-card" onClick={() => onOpen(user.username)}>
       <div className="public-card-head">
-        <span className="avatar dark">{initials}</span>
+        <Avatar user={user} className="dark" />
         <span>
           <strong>{user.username}</strong>
           <small>{days[0] ? "Logged recently" : "No public logs yet"}</small>

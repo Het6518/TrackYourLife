@@ -3,6 +3,8 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from accounts.models import avatar_url_for
+
 from .models import Day
 from .serializers import DaySerializer
 
@@ -21,13 +23,13 @@ class DayViewSet(viewsets.ModelViewSet):
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def public_users(request):
-    users = (
-        User.objects.filter(days__is_public=True)
-        .distinct()
-        .order_by("username")
-        .values("id", "username")
+    users = User.objects.filter(days__is_public=True).distinct().order_by("username")
+    return Response(
+        [
+            {"id": u.id, "username": u.username, "avatar_url": avatar_url_for(u, request)}
+            for u in users
+        ]
     )
-    return Response(list(users))
 
 
 @api_view(["GET"])
@@ -41,7 +43,11 @@ def public_user_days(request, username):
     days = Day.objects.filter(user=user, is_public=True)
     return Response(
         {
-            "user": {"id": user.id, "username": user.username},
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "avatar_url": avatar_url_for(user, request),
+            },
             "days": DaySerializer(days, many=True).data,
         }
     )

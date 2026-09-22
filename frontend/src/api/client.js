@@ -8,7 +8,7 @@ export async function request(path, options = {}, token = "") {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       ...authHeaders(token),
       ...(options.headers || {}),
     },
@@ -33,6 +33,12 @@ export const authApi = {
   login: (payload) => request("/auth/login/", { method: "POST", body: JSON.stringify(payload) }),
   me: (token) => request("/auth/me/", {}, token),
   logout: (token) => request("/auth/logout/", { method: "POST" }, token),
+  uploadAvatar: (file, token) => {
+    const body = new FormData();
+    body.append("avatar", file);
+    return request("/auth/me/avatar/", { method: "POST", body }, token);
+  },
+  removeAvatar: (token) => request("/auth/me/avatar/", { method: "DELETE" }, token),
 };
 
 export const daysApi = {

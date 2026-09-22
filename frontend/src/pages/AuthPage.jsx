@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
 import { authApi } from "../api/client";
+import StarMark from "../components/StarMark";
 
 export default function AuthPage({ onAuth }) {
   const [mode, setMode] = useState("login");
@@ -20,14 +20,17 @@ export default function AuthPage({ onAuth }) {
   }
 
   return (
-    <main className="auth-shell">
-      <section className="auth-card aurora-card">
-        <div className="auth-copy">
-          <span className="brand-mark"><Sparkles size={18} /> TrackYourLife</span>
-          <h1>Your year, translated into color.</h1>
-          <p>Score each day, leave a small note, and watch your personal rhythm become visible.</p>
-        </div>
-        <form onSubmit={submit} className="auth-form glass-panel">
+    <div className="frame auth-frame">
+      <main className="auth-card">
+        <section className="hero auth-copy">
+          <span className="logo"><StarMark /></span>
+          <div>
+            <p className="eyebrow">TrackYourLife</p>
+            <h1>Your year, translated into color.</h1>
+            <p>Score each day, leave a small note, and watch your personal rhythm become visible.</p>
+          </div>
+        </section>
+        <form onSubmit={submit} className="auth-form white-card">
           <div className="tabs">
             <button type="button" className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>Login</button>
             <button type="button" className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>Register</button>
@@ -49,7 +52,7 @@ export default function AuthPage({ onAuth }) {
           {error && <p className="error">{error}</p>}
           <button className="primary full" type="submit">{mode === "login" ? "Enter dashboard" : "Create account"}</button>
         </form>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }

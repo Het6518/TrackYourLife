@@ -4,13 +4,14 @@ A daily life-rating journal. Each day you log a score from 1–10 and an optiona
 
 ## Tech stack
 
-- **Backend:** Django + Django REST Framework, token authentication, django-cors-headers
+- **Backend:** Django + Django REST Framework, Pillow, token authentication, django-cors-headers
 - **Database:** SQLite by default, PostgreSQL when `POSTGRES_DB` is set
 - **Frontend:** React (Vite), lucide-react icons
 
 ## Features
 
 - Register, log in and log out (token auth)
+- Profile avatars: upload (image, max 2 MB) or remove from the dashboard header; falls back to initials
 - One entry per user per day (score 1–10, note, public/private flag)
 - Dashboard with entry form, year heatmap, trends and recent entries
 - Day modal to view, edit or delete an entry
@@ -84,7 +85,8 @@ Authenticated requests send `Authorization: Token <token>`.
 | POST | `/api/auth/register/` | Create an account |
 | POST | `/api/auth/login/` | Log in, returns a token |
 | POST | `/api/auth/logout/` | Log out |
-| GET | `/api/auth/me/` | Current user |
+| GET | `/api/auth/me/` | Current user (includes `avatar_url`) |
+| POST, DELETE | `/api/auth/me/avatar/` | Upload (multipart field `avatar`) or remove your avatar |
 | GET, POST | `/api/days/` | List or create your entries |
 | PUT, DELETE | `/api/days/<id>/` | Update or delete an entry |
 | GET | `/api/public/users/` | Users with public entries |

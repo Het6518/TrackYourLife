@@ -1,10 +1,13 @@
-import { Compass } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Avatar from "../components/Avatar";
 import PublicUserCard from "../components/PublicUserCard";
+import SearchBar from "../components/SearchBar";
+import Shell from "../components/Shell";
 import { daysApi } from "../api/client";
 
-export default function ExplorePage({ navigate }) {
+export default function ExplorePage({ navigate, ...shell }) {
   const [profiles, setProfiles] = useState([]);
+  const [query, setQuery] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -16,23 +19,46 @@ export default function ExplorePage({ navigate }) {
     load().catch((err) => setError(err.message));
   }, []);
 
+  const visible = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return term ? profiles.filter((profile) => profile.user.username.toLowerCase().includes(term)) : profiles;
+  }, [profiles, query]);
+
+  const open = (username) => navigate("profile", username);
+
   return (
-    <main className="page-shell explore-page">
-      <header className="simple-topbar">
-        <div>
-          <span className="brand-mark"><Compass size={18} /> Explore</span>
-          <h1>Public Daymaps</h1>
-          <p>Browse people who chose to share parts of their year.</p>
+    <Shell active="explore" navigate={navigate} {...shell}>
+      <div className="stage-grid">
+        <section className="hero explore-hero">
+          <div className="hero-top">
+            <p className="eyebrow">Explore</p>
+            <h1>Public Daymaps</h1>
+            <p>Browse people who chose to share parts of their year.</p>
+          </div>
+          {error && <p className="error">{error}</p>}
+          <div className="explore-grid">
+            {visible.map((profile) => (
+              <PublicUserCard key={profile.user.id} user={profile.user} days={profile.days} onOpen={open} />
+            ))}
+          </div>
+          {!visible.length && !error && <div className="stack-empty">{query ? "Nobody matches that name." : "No public Daymaps yet."}</div>}
+        </section>
+
+        <div className="side">
+          <SearchBar value={query} onChange={setQuery} placeholder="Search people" />
+          <section className="white-card most-active">
+            <h3>Most active</h3>
+            {profiles.slice(0, 5).map((profile) => (
+              <button key={profile.user.id} onClick={() => open(profile.user.username)}>
+                <Avatar user={profile.user} className="dark" />
+                <span>{profile.user.username}</span>
+                <b>{profile.days.length}</b>
+              </button>
+            ))}
+            {!profiles.length && <p className="empty-state">Nothing here yet.</p>}
+          </section>
         </div>
-        <button className="soft-button" onClick={() => navigate("dashboard")}>Dashboard</button>
-      </header>
-      {error && <p className="error">{error}</p>}
-      <section className="explore-grid">
-        {profiles.map((profile) => (
-          <PublicUserCard key={profile.user.id} user={profile.user} days={profile.days} onOpen={(username) => navigate("profile", username)} />
-        ))}
-      </section>
-      {!profiles.length && !error && <div className="empty-large">No public Daymaps yet.</div>}
-    </main>
+      </div>
+    </Shell>
   );
 }

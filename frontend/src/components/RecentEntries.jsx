@@ -14,7 +14,7 @@ export default function RecentEntries({ days, onSelect }) {
             <b className={`mini-score level-${day.score}`}>{day.score}/10</b>
           </button>
         ))}
-        {!days.length && <p className="empty-state">Your saved entries will appear here.</p>}
+        {!days.length && <p className="empty-state">No matching entries.</p>}
       </div>
     </section>
   );
