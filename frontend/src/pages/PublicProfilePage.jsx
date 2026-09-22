@@ -11,7 +11,7 @@ import YearHeatmap from "../components/YearHeatmap";
 import { daysApi, friendsApi } from "../api/client";
 import { averageScore, bestStreak, shortDate } from "../utils/date";
 
-const ENTRIES_PAGE_SIZE = 8;
+const ENTRIES_PAGE_SIZE = 5;
 
 export default function PublicProfilePage({ username, navigate, ...shell }) {
   const [profile, setProfile] = useState(null);
