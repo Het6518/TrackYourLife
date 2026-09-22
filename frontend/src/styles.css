@@ -579,6 +579,7 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
 .music-widget { position: fixed; left: 16px; bottom: 16px; z-index: 90; display: grid; gap: 10px; width: min(320px, calc(100vw - 32px)); }
 .music-bar { display: flex; align-items: center; gap: 10px; border-radius: 999px; background: var(--panel-strong); backdrop-filter: blur(16px); border: 1px solid var(--panel-border); padding: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.45); }
 .music-bar-toggle { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--white); padding: 0; }
+.music-bar-art { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 8px; object-fit: cover; }
 .music-bar-info { flex: 1; min-width: 0; display: grid; cursor: pointer; }
 .music-bar-info strong { font-size: 12.5px; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .music-bar-info small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -587,17 +588,23 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
 .music-bar-controls button:hover:not(:disabled) { background: rgba(255,255,255,0.08); }
 .music-bar-play { background: linear-gradient(140deg, var(--orange), var(--orange-2)) !important; color: var(--black) !important; }
 .music-panel { display: grid; gap: 12px; max-height: 360px; border-radius: 22px; background: var(--panel-strong); backdrop-filter: blur(18px); border: 1px solid var(--panel-border); padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: rise-in 220ms ease both; }
-.music-panel-head { display: flex; align-items: center; justify-content: space-between; }
-.music-panel-actions { display: flex; gap: 6px; }
+.music-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.music-tabs { display: flex; gap: 4px; border-radius: 999px; background: rgba(255,255,255,0.06); padding: 3px; }
+.music-tabs button { border: 0; border-radius: 999px; background: transparent; color: var(--muted); padding: 6px 12px; font-size: 12px; font-weight: 700; }
+.music-tabs button.active { background: var(--orange); color: var(--black); }
+.music-panel-actions { display: flex; gap: 6px; flex: 0 0 auto; }
 .music-upload { display: grid; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--panel-border); }
 .music-file-picker { display: flex; align-items: center; gap: 8px; border: 1px dashed var(--panel-border); border-radius: 12px; padding: 10px 12px; font-size: 12px; color: var(--muted); cursor: pointer; }
+.music-search-bar { display: flex; align-items: center; gap: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border); padding: 8px 14px; color: var(--muted); }
+.music-search-bar input { flex: 1; border: 0; background: transparent; color: var(--white); outline: none; padding: 0; font-size: 13px; }
 .music-list { display: grid; gap: 6px; overflow-y: auto; max-height: 220px; }
 .music-row { display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 6px 8px; }
 .music-row.active { background: rgba(255,255,255,0.08); }
 .music-row-play { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid var(--panel-border); border-radius: 50%; background: rgba(255,255,255,0.05); color: var(--white); padding: 0; }
+.music-row-art { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 6px; object-fit: cover; }
 .music-row-info { flex: 1; min-width: 0; display: grid; }
 .music-row-info strong { font-size: 12.5px; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.music-row-info small { font-size: 11px; color: var(--muted); }
+.music-row-info small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .music-row-remove { width: 24px; height: 24px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); padding: 0; }
 .music-row-remove:hover { color: #ff8a75; }
 
