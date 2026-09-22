@@ -4,8 +4,8 @@ import { musicApi } from "../api/client";
 import { searchSongs } from "../utils/musicSearch";
 
 // A song player with two sources: your own uploaded library, and a live
-// search of Apple's public iTunes catalog (free, no API key, 30-second
-// previews) so you can pick pretty much any real song to listen to.
+// search of Jamendo's music catalog (free, full-length streaming tracks)
+// so you can pick songs to listen to.
 // Mounted once, globally, in main.jsx — same pattern as WeatherFX — so
 // playback survives page navigation.
 export default function MusicPlayer({ token }) {
@@ -203,7 +203,7 @@ export default function MusicPlayer({ token }) {
                 })}
                 {searching && <p className="empty-state">Searching…</p>}
                 {!searching && query.trim().length >= 2 && !results.length && <p className="empty-state">No matches — try another search.</p>}
-                {query.trim().length < 2 && <p className="empty-state">Type a song or artist name — previews are 30 seconds, courtesy of the iTunes public catalog.</p>}
+                {query.trim().length < 2 && <p className="empty-state">Type a song genre to search out of the hundreds of thousands of tracks.</p>}
               </div>
             </>
           )}
