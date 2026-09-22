@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Avatar from "../components/Avatar";
+import Pagination, { paginate } from "../components/Pagination";
 import PublicUserCard from "../components/PublicUserCard";
 import SearchBar from "../components/SearchBar";
 import Shell from "../components/Shell";
 import { daysApi } from "../api/client";
 
+const PROFILES_PAGE_SIZE = 8;
+
 export default function ExplorePage({ navigate, ...shell }) {
   const [profiles, setProfiles] = useState([]);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -23,6 +27,8 @@ export default function ExplorePage({ navigate, ...shell }) {
     const term = query.trim().toLowerCase();
     return term ? profiles.filter((profile) => profile.user.username.toLowerCase().includes(term)) : profiles;
   }, [profiles, query]);
+  const { pageItems: pageProfiles, pageCount, safePage } = paginate(visible, page, PROFILES_PAGE_SIZE);
+  useEffect(() => setPage(1), [query, profiles.length]);
 
   const open = (username) => navigate("profile", username);
 
@@ -37,11 +43,12 @@ export default function ExplorePage({ navigate, ...shell }) {
           </div>
           {error && <p className="error">{error}</p>}
           <div className="explore-grid">
-            {visible.map((profile) => (
+            {pageProfiles.map((profile) => (
               <PublicUserCard key={profile.user.id} user={profile.user} days={profile.days} onOpen={open} />
             ))}
           </div>
           {!visible.length && !error && <div className="stack-empty">{query ? "Nobody matches that name." : "No public Daymaps yet."}</div>}
+          <Pagination page={safePage} pageCount={pageCount} onChange={setPage} />
         </section>
 
         <div className="side">

@@ -3,6 +3,7 @@ import { Check, UserMinus, UserPlus, UserX } from "lucide-react";
 import Avatar from "../components/Avatar";
 import DayModal from "../components/DayModal";
 import EntryStack from "../components/EntryStack";
+import Pagination, { paginate } from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
 import Shell from "../components/Shell";
 import Trends from "../components/Trends";
@@ -10,10 +11,13 @@ import YearHeatmap from "../components/YearHeatmap";
 import { daysApi, friendsApi } from "../api/client";
 import { averageScore, bestStreak, shortDate } from "../utils/date";
 
+const ENTRIES_PAGE_SIZE = 8;
+
 export default function PublicProfilePage({ username, navigate, ...shell }) {
   const [profile, setProfile] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const [query, setQuery] = useState("");
+  const [entriesPage, setEntriesPage] = useState(1);
   const [error, setError] = useState("");
   const [relation, setRelation] = useState(null); // {relationship, request_id}
   const year = new Date().getFullYear();
@@ -69,6 +73,8 @@ export default function PublicProfilePage({ username, navigate, ...shell }) {
     const term = query.trim().toLowerCase();
     return term ? days.filter((day) => day.note.toLowerCase().includes(term) || day.date.includes(term)) : days;
   }, [days, query]);
+  const { pageItems: entryPageItems, pageCount: entryPageCount, safePage: entrySafePage } = paginate(filtered, entriesPage, ENTRIES_PAGE_SIZE);
+  useEffect(() => setEntriesPage(1), [query, days.length]);
 
   if (error) {
     return (
@@ -141,7 +147,7 @@ export default function PublicProfilePage({ username, navigate, ...shell }) {
         <Trends days={days} />
         <section className="panel all-entries">
           <h2>All public entries</h2>
-          {filtered.map((day) => (
+          {entryPageItems.map((day) => (
             <button key={day.id} className="public-entry" onClick={() => setSelectedDay(day)}>
               <span className={`dot level-${day.score}`} />
               <span><strong>{shortDate(day.date)}</strong><small>{day.note || "No note"}</small></span>
@@ -149,6 +155,7 @@ export default function PublicProfilePage({ username, navigate, ...shell }) {
             </button>
           ))}
           {!filtered.length && <p className="empty-state">No matching entries.</p>}
+          <Pagination page={entrySafePage} pageCount={entryPageCount} onChange={setEntriesPage} />
         </section>
       </section>
 

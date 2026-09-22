@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { Check, Search, UserMinus, UserPlus, UserX } from "lucide-react";
 import Avatar from "../components/Avatar";
+import Pagination, { paginate } from "../components/Pagination";
 import Shell from "../components/Shell";
 import { friendsApi } from "../api/client";
+
+const FRIENDS_PAGE_SIZE = 10;
 
 export default function FriendsPage({ navigate, ...shell }) {
   const [friends, setFriends] = useState([]);
@@ -10,8 +13,10 @@ export default function FriendsPage({ navigate, ...shell }) {
   const [outgoing, setOutgoing] = useState([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [friendsPage, setFriendsPage] = useState(1);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
+  const { pageItems: friendPageItems, pageCount: friendPageCount, safePage: friendSafePage } = paginate(friends, friendsPage, FRIENDS_PAGE_SIZE);
 
   function loadAll() {
     friendsApi.list(shell.token).then(setFriends).catch(() => setFriends([]));
@@ -143,17 +148,20 @@ export default function FriendsPage({ navigate, ...shell }) {
       <section className="panel">
         <h2>Your friends</h2>
         {friends.length > 0 ? (
-          <div className="friends-grid">
-            {friends.map((friend) => (
-              <div key={friend.id} className="friend-row">
-                <button type="button" className="friend-row-identity" onClick={() => navigate("profile", friend.username)}>
-                  <Avatar user={friend} />
-                  <span>{friend.username}</span>
-                </button>
-                <button type="button" className="friend-row-remove" onClick={() => remove(friend.username)} aria-label="Remove friend"><UserMinus size={15} /></button>
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="friends-grid">
+              {friendPageItems.map((friend) => (
+                <div key={friend.id} className="friend-row">
+                  <button type="button" className="friend-row-identity" onClick={() => navigate("profile", friend.username)}>
+                    <Avatar user={friend} />
+                    <span>{friend.username}</span>
+                  </button>
+                  <button type="button" className="friend-row-remove" onClick={() => remove(friend.username)} aria-label="Remove friend"><UserMinus size={15} /></button>
+                </div>
+              ))}
+            </div>
+            <Pagination page={friendSafePage} pageCount={friendPageCount} onChange={setFriendsPage} />
+          </>
         ) : (
           <p className="empty-state">No friends yet — search above to send your first request.</p>
         )}

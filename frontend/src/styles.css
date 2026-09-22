@@ -86,14 +86,21 @@ h3 { margin-bottom: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em
 .app-stage.revealed { opacity: 1; animation: stage-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 @keyframes stage-in {
   from { opacity: 0; transform: translateY(28px) scale(0.985); filter: blur(6px); }
-  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  /* ending on `none` (not translateY(0)/blur(0), which LOOK identical but
+     aren't) matters: any non-none transform/filter left on an ancestor —
+     even after the animation finishes, since fill-mode "both" keeps it
+     applied forever — creates a new containing block for every
+     `position: fixed` descendant. Every modal on the page (DayModal, etc.)
+     was centering itself against this animated wrapper's full scrolled
+     height instead of the actual viewport because of exactly this. */
+  to { opacity: 1; transform: none; filter: none; }
 }
 .app-stage.revealed .frame > .stage > * { animation: rise-in 640ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .app-stage.revealed .frame > .stage > *:nth-child(2) { animation-delay: 90ms; }
 .app-stage.revealed .frame > .stage > *:nth-child(3) { animation-delay: 160ms; }
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(18px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: none; }
 }
 
 /* frame — transparent so the weather photo reads through everywhere */
@@ -291,6 +298,12 @@ h3 { margin-bottom: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em
 .dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
 .empty-state { color: var(--muted); font-size: 14px; }
 
+/* pagination — keeps long lists from just growing the whole page taller */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; }
+.pagination span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.pagination button { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--panel-border); border-radius: 50%; background: rgba(255,255,255,0.05); color: var(--white); padding: 0; }
+.pagination button:hover:not(:disabled) { background: var(--orange); color: var(--black); border-color: var(--orange); }
+
 /* heatmap: warm terracotta ramp (1 = dark, 10 = bright orange), glowing on dark glass */
 .year-heatmap { display: flex; flex-wrap: wrap; gap: 14px 18px; }
 .month-block h3 { margin: 0 0 8px; }
@@ -339,7 +352,11 @@ input:focus, textarea:focus { border-color: var(--orange); box-shadow: 0 0 0 3px
 .public-card-foot b { color: var(--orange-2); }
 
 /* modal */
-.modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); padding: 24px; }
+/* z-index 200: modals now render via a portal straight onto <body> (see
+   components/Modal.jsx), as true siblings of the other fixed overlays
+   (.music-widget: 90, .theme-dev-switcher: 100) rather than nested inside
+   .frame's own stacking context — so it needs to outrank all of them explicitly. */
+.modal-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); padding: 24px; }
 .day-modal { width: min(470px, 100%); max-height: calc(100vh - 48px); overflow: auto; border-radius: 32px; background: var(--panel-strong); backdrop-filter: blur(24px); border: 1px solid var(--panel-border); color: var(--white); padding: 28px; box-shadow: 0 40px 90px rgba(0,0,0,0.6); animation: rise-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .modal-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .modal-top h2 { margin: 4px 0 0; }
@@ -613,5 +630,5 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
 .theme-dev-switcher select { width: auto; border: 1px solid var(--panel-border); border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--white); padding: 6px 12px; font-size: 12px; font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-stage, .app-stage.revealed, .app-stage.revealed .frame > .shell > .stage > *, .day-modal { animation: none !important; opacity: 1 !important; filter: none !important; transform: none !important; }
+  .app-stage, .app-stage.revealed, .app-stage.revealed .frame > .stage > *, .day-modal { animation: none !important; opacity: 1 !important; filter: none !important; transform: none !important; }
 }

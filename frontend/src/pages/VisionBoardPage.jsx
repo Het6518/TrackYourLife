@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Image as ImageIcon, Paintbrush, Plus, StickyNote, Trash2, X } from "lucide-react";
+import Modal from "../components/Modal";
 import Shell from "../components/Shell";
 import { authApi, boardApi } from "../api/client";
 
@@ -237,6 +238,7 @@ export default function VisionBoardPage({ navigate, user, ...shell }) {
       </div>
 
       {composerOpen && (
+      <Modal>
         <div className="modal-backdrop" onClick={resetComposer}>
           <form className="day-modal board-composer" onClick={(event) => event.stopPropagation()} onSubmit={addPin}>
             <div className="modal-top">
@@ -286,6 +288,7 @@ export default function VisionBoardPage({ navigate, user, ...shell }) {
             <button type="submit" className="primary full"><Plus size={15} /> Pin it to the board</button>
           </form>
         </div>
+      </Modal>
       )}
     </Shell>
   );
