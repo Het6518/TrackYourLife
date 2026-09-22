@@ -43,6 +43,14 @@ export const authApi = {
     request("/auth/me/location/", { method: "PUT", body: JSON.stringify({ latitude, longitude }) }, token),
   updateBoardStyle: (background, token) =>
     request("/auth/me/board-style/", { method: "PUT", body: JSON.stringify({ background }) }, token),
+  uploadThemeBackground: (file, token) => {
+    const body = new FormData();
+    body.append("background", file);
+    return request("/auth/me/theme-background/", { method: "POST", body }, token);
+  },
+  removeThemeBackground: (token) => request("/auth/me/theme-background/", { method: "DELETE" }, token),
+  updateThemeAccent: (accentColor, token) =>
+    request("/auth/me/theme-accent/", { method: "PUT", body: JSON.stringify({ accent_color: accentColor }) }, token),
 };
 
 export const daysApi = {

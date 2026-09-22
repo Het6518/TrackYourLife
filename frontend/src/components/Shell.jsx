@@ -3,6 +3,7 @@ import { Bell, Camera, Compass, Home, LogOut, MapPin, Pin, Trash2, UserCog, User
 import { authApi } from "../api/client";
 import Avatar from "./Avatar";
 import StarMark from "./StarMark";
+import ThemeSettings from "./ThemeSettings";
 
 // Top bar layout mirrors the reference dashboard: small mark far left,
 // section tabs centered, status + notification + avatar far right.
@@ -62,6 +63,7 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
 
         <div className="topbar-right">
           {weather && <span className="topbar-status">{weather.label}{typeof weather.temperature === "number" ? ` · ${Math.round(weather.temperature)}°C` : ""}</span>}
+          <ThemeSettings user={user} token={token} onUserChange={onUserChange} />
           <button className="topbar-icon" title="Explore public Daymaps" aria-label="Explore public Daymaps" onClick={() => navigate("explore")}>
             <Bell size={17} />
           </button>

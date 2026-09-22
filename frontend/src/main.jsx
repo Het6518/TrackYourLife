@@ -12,7 +12,7 @@ import MusicPlayer from "./components/MusicPlayer";
 import ThemeDevSwitcher from "./components/ThemeDevSwitcher";
 import WeatherFX from "./components/WeatherFX";
 import { getBrowserLocation } from "./utils/geolocation";
-import { applyTheme, detectWeatherTheme, instantThemeGuess } from "./utils/weather";
+import { applyPersonalization, applyTheme, detectWeatherTheme, instantThemeGuess } from "./utils/weather";
 import "./styles.css"; // will move to tailwind later
 
 function parseLocation() {
@@ -49,6 +49,14 @@ function App() {
       })
       .catch(() => {});
   }, []);
+
+  // Re-assert the user's own background/accent overrides every time the
+  // weather theme changes (weather always writes --bg-image/data-theme
+  // first) or the user's saved personalization changes — otherwise a later
+  // weather update would silently clobber whatever they picked.
+  useEffect(() => {
+    applyPersonalization(user);
+  }, [user?.theme_background_url, user?.theme_accent_color, weather]);
 // Imagine the user refreshes the page.
 
 // They have a token:

@@ -12,6 +12,8 @@ from .serializers import (
     LocationSerializer,
     LoginSerializer,
     RegisterSerializer,
+    ThemeAccentSerializer,
+    ThemeBackgroundSerializer,
     UserSerializer,
 )
 
@@ -107,5 +109,46 @@ class BoardStyleView(APIView):
         serializer.is_valid(raise_exception=True)
         profile, _ = Profile.objects.get_or_create(user=request.user)
         profile.board_background = serializer.validated_data["background"]
+        profile.save()
+        return Response(UserSerializer(request.user, context={"request": request}).data)
+
+
+class ThemeBackgroundView(APIView):
+    """The app-wide custom background photo a user uploads, overriding the
+    automatic weather-based one everywhere it's used."""
+
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = ThemeBackgroundSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        if profile.theme_background:
+            profile.theme_background.delete(save=False)
+        profile.theme_background = serializer.validated_data["background"]
+        profile.save()
+        return Response(UserSerializer(request.user, context={"request": request}).data)
+
+    def delete(self, request):
+        profile = Profile.objects.filter(user=request.user).first()
+        if profile and profile.theme_background:
+            profile.theme_background.delete(save=False)
+            profile.theme_background = ""
+            profile.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ThemeAccentView(APIView):
+    """The app-wide accent color override — blank clears it back to the
+    automatic weather-driven accent."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        serializer = ThemeAccentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile.theme_accent_color = serializer.validated_data["accent_color"]
         profile.save()
         return Response(UserSerializer(request.user, context={"request": request}).data)
