@@ -131,7 +131,7 @@ class Command(BaseCommand):
                         date=current,
                         score=score,
                         note=note,
-                        is_public=random.random() < profile["public_ratio"],
+                        visibility="public" if random.random() < profile["public_ratio"] else "private",
                     )
                 )
 

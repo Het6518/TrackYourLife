@@ -29,6 +29,11 @@ export function dayToIso(date) {
   return date.toISOString().slice(0, 10);
 }
 
+export function truncateNote(note, max = 90) {
+  const clean = note.trim();
+  return clean.length > max ? `${clean.slice(0, max).trimEnd()}…` : clean;
+}
+
 export function scoreLevel(score) {
   if (!score) return 0;
   return Math.max(1, Math.min(10, Number(score)));

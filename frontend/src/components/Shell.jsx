@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
-import { Camera, Frame, Heart, Home, Image as ImageIcon, LogOut, Settings, Trash2 } from "lucide-react";
+import { Bell, Camera, Compass, Home, LogOut, MapPin, Pin, Trash2, UserCog, Users } from "lucide-react";
 import { authApi } from "../api/client";
 import Avatar from "./Avatar";
 import StarMark from "./StarMark";
 
-export default function Shell({ active, user, token, navigate, onLogout, onUserChange, children }) {
+// Top bar layout mirrors the reference dashboard: small mark far left,
+// section tabs centered, status + notification + avatar far right.
+export default function Shell({ active, user, token, navigate, onLogout, onUserChange, weather, children }) {
   const fileInput = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [error, setError] = useState("");
@@ -33,51 +35,55 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
     }
   }
 
-  function goTrends() {
-    if (active === "dashboard") document.getElementById("lower")?.scrollIntoView({ behavior: "smooth" });
-    else navigate("dashboard");
-  }
-
-  const items = [
-    { key: "dashboard", label: "Dashboard", icon: Home, onClick: () => navigate("dashboard") },
-    { key: "explore", label: "Explore public Daymaps", icon: Heart, onClick: () => navigate("explore") },
-    { key: "me", label: "My public profile", icon: ImageIcon, onClick: () => navigate("profile", user.username) },
-    { key: "trends", label: "Trends", icon: Frame, onClick: goTrends },
+  const tabs = [
+    { key: "dashboard", label: "Overview", icon: Home, onClick: () => navigate("dashboard") },
+    { key: "explore", label: "Explore", icon: Compass, onClick: () => navigate("explore") },
+    { key: "map", label: "Map", icon: MapPin, onClick: () => navigate("map") },
+    { key: "board", label: "Vision Board", icon: Pin, onClick: () => navigate("board") },
+    { key: "friends", label: "Friends", icon: Users, onClick: () => navigate("friends") },
+    { key: "me", label: "My profile", icon: UserCog, onClick: () => navigate("profile", user.username) },
   ];
 
   return (
     <div className="frame">
-      <div className="shell">
-        <div className="left">
-          <div className="logo" title="TrackYourLife"><StarMark /></div>
-          <aside className="rail">
-            {items.map(({ key, label, icon: Icon, onClick }) => (
-              <button key={key} className={`rail-button ${active === key ? "active" : ""}`} onClick={onClick} title={label} aria-label={label}>
-                <Icon size={19} />
-              </button>
-            ))}
-            <button className={`rail-button ${menuOpen ? "active" : ""}`} onClick={() => setMenuOpen(!menuOpen)} title="Avatar settings" aria-label="Avatar settings">
-              <Settings size={19} />
+      <header className="topbar">
+        <div className="topbar-mark" title="TrackYourLife">
+          <span className="logo"><StarMark /></span>
+          <b>TrackYourLife</b>
+        </div>
+
+        <nav className="topbar-tabs">
+          {tabs.map(({ key, label, icon: Icon, onClick }) => (
+            <button key={key} className={`topbar-tab ${active === key ? "active" : ""}`} onClick={onClick}>
+              <Icon size={16} /> <span>{label}</span>
             </button>
-            <div className="rail-bottom">
-              <button className="rail-button" onClick={onLogout} title="Logout" aria-label="Logout"><LogOut size={19} /></button>
-              <button className="avatar-button" onClick={() => setMenuOpen(!menuOpen)} title={user.username} aria-label="Avatar settings">
-                <Avatar user={user} />
-              </button>
-            </div>
+          ))}
+        </nav>
+
+        <div className="topbar-right">
+          {weather && <span className="topbar-status">{weather.label}{typeof weather.temperature === "number" ? ` · ${Math.round(weather.temperature)}°C` : ""}</span>}
+          <button className="topbar-icon" title="Explore public Daymaps" aria-label="Explore public Daymaps" onClick={() => navigate("explore")}>
+            <Bell size={17} />
+          </button>
+          <div className="avatar-wrap">
+            <button className="avatar-button" onClick={() => setMenuOpen(!menuOpen)} title={user.username} aria-label="Account menu">
+              <Avatar user={user} />
+            </button>
             {menuOpen && (
               <div className="avatar-menu">
                 <strong>{user.username}</strong>
                 <input ref={fileInput} type="file" accept="image/*" hidden onChange={upload} />
                 <button onClick={() => fileInput.current.click()}><Camera size={15} /> Upload photo</button>
                 {user.avatar_url && <button onClick={removeAvatar}><Trash2 size={15} /> Remove photo</button>}
+                <button onClick={onLogout}><LogOut size={15} /> Logout</button>
                 {error && <span className="avatar-error">{error}</span>}
               </div>
             )}
-          </aside>
+          </div>
         </div>
-        <main className="stage">{children}</main>
-      </div>
+      </header>
+
+      <main className="stage">{children}</main>
     </div>
   );
 }

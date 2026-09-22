@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -5,7 +6,14 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.views import APIView
 
 from .models import Profile
-from .serializers import AvatarSerializer, LoginSerializer, RegisterSerializer, UserSerializer
+from .serializers import (
+    AvatarSerializer,
+    BoardStyleSerializer,
+    LocationSerializer,
+    LoginSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 
 class RegisterView(APIView):
@@ -69,3 +77,35 @@ class AvatarView(APIView):
             profile.avatar = ""
             profile.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class LocationView(APIView):
+    """Stores the coordinates the browser's geolocation API reported for the
+    logged-in user, so they can show up as a pin on the Map tab."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        serializer = LocationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile.latitude = serializer.validated_data["latitude"]
+        profile.longitude = serializer.validated_data["longitude"]
+        profile.location_updated_at = timezone.now()
+        profile.save()
+        return Response(UserSerializer(request.user, context={"request": request}).data)
+
+
+class BoardStyleView(APIView):
+    """Stores the vision board's chosen background — 'transparent' (glass,
+    the default) or a specific #rrggbb the user picked."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        serializer = BoardStyleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile.board_background = serializer.validated_data["background"]
+        profile.save()
+        return Response(UserSerializer(request.user, context={"request": request}).data)

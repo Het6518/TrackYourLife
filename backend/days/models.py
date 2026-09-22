@@ -2,6 +2,12 @@ from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+VISIBILITY_CHOICES = [
+    ("private", "Private"),
+    ("friends", "Friends"),
+    ("public", "Public"),
+]
+
 
 class Day(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="days")
@@ -10,7 +16,7 @@ class Day(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
     note = models.TextField(blank=True)
-    is_public = models.BooleanField(default=False)
+    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default="private")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

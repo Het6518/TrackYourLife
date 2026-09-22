@@ -61,7 +61,7 @@ class AvatarTests(APITestCase):
         self.assertEqual(self.client.post("/api/auth/me/avatar/", {"avatar": make_image()}, format="multipart").status_code, 401)
 
     def test_public_endpoints_include_avatar_url(self):
-        Day.objects.create(user=self.user, date="2026-01-01", score=5, is_public=True)
+        Day.objects.create(user=self.user, date="2026-01-01", score=5, visibility="public")
         self.client.post("/api/auth/me/avatar/", {"avatar": make_image()}, format="multipart")
         self.client.credentials()
         listed = self.client.get("/api/public/users/").json()[0]

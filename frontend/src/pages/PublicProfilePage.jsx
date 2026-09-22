@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Check, UserMinus, UserPlus, UserX } from "lucide-react";
 import Avatar from "../components/Avatar";
 import DayModal from "../components/DayModal";
 import EntryStack from "../components/EntryStack";
@@ -6,7 +7,7 @@ import SearchBar from "../components/SearchBar";
 import Shell from "../components/Shell";
 import Trends from "../components/Trends";
 import YearHeatmap from "../components/YearHeatmap";
-import { daysApi } from "../api/client";
+import { daysApi, friendsApi } from "../api/client";
 import { averageScore, bestStreak, shortDate } from "../utils/date";
 
 export default function PublicProfilePage({ username, navigate, ...shell }) {
@@ -14,14 +15,46 @@ export default function PublicProfilePage({ username, navigate, ...shell }) {
   const [selectedDay, setSelectedDay] = useState(null);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
+  const [relation, setRelation] = useState(null); // {relationship, request_id}
   const year = new Date().getFullYear();
-  const active = username === shell.user.username ? "me" : "";
+  const isSelf = username === shell.user.username;
+  const active = isSelf ? "me" : "";
 
   useEffect(() => {
     setProfile(null);
     setError("");
-    daysApi.publicUserDays(username).then(setProfile).catch((err) => setError(err.message));
+    daysApi.publicUserDays(username, shell.token).then(setProfile).catch((err) => setError(err.message));
   }, [username]);
+
+  useEffect(() => {
+    if (isSelf) {
+      setRelation(null);
+      return;
+    }
+    friendsApi.search(username, shell.token)
+      .then((results) => setRelation(results.find((r) => r.username === username) || { relationship: "none", request_id: null }))
+      .catch(() => setRelation(null));
+  }, [username, isSelf]);
+
+  async function sendFriendRequest() {
+    try {
+      const result = await friendsApi.send(username, shell.token);
+      setRelation({ relationship: result.status === "accepted" ? "friends" : "pending_outgoing", request_id: result.id });
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function respond(action) {
+    if (!relation?.request_id) return;
+    await friendsApi[action](relation.request_id, shell.token).catch(() => {});
+    setRelation(action === "accept" ? { relationship: "friends", request_id: null } : { relationship: "none", request_id: null });
+  }
+
+  async function unfriend() {
+    await friendsApi.remove(username, shell.token).catch(() => {});
+    setRelation({ relationship: "none", request_id: null });
+  }
 
   const days = profile?.days || [];
   const stats = useMemo(() => ({
@@ -57,6 +90,25 @@ export default function PublicProfilePage({ username, navigate, ...shell }) {
               <p className="eyebrow">Public Daymap · {year}</p>
               <h1>{profile.user.username}</h1>
             </div>
+            {!isSelf && relation && (
+              <div className="friend-action">
+                {relation.relationship === "none" && (
+                  <button type="button" className="soft-button" onClick={sendFriendRequest}><UserPlus size={15} /> Add friend</button>
+                )}
+                {relation.relationship === "pending_outgoing" && (
+                  <button type="button" className="soft-button" disabled><UserPlus size={15} /> Request sent</button>
+                )}
+                {relation.relationship === "pending_incoming" && (
+                  <>
+                    <button type="button" className="primary small" onClick={() => respond("accept")}><Check size={15} /> Accept</button>
+                    <button type="button" className="soft-button" onClick={() => respond("decline")}><UserX size={15} /> Decline</button>
+                  </>
+                )}
+                {relation.relationship === "friends" && (
+                  <button type="button" className="soft-button" onClick={unfriend}><UserMinus size={15} /> Friends · Remove</button>
+                )}
+              </div>
+            )}
           </div>
           <div className="stat-chips">
             <span><b>{stats.logged}/365</b> days logged</span>

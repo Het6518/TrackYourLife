@@ -24,7 +24,7 @@ export default function DayModal({ day, days, onClose, onEdit, onSelectDay }) {
           <strong className={`score-orb level-${day.score}`}>{day.score}</strong>
           <div>
             <span>out of 10</span>
-            <p>{day.is_public ? "Visible on public Daymaps" : "Private entry"}</p>
+            <p>{day.visibility === "public" ? "Visible on public Daymaps" : day.visibility === "friends" ? "Visible to friends" : "Private entry"}</p>
           </div>
         </div>
 

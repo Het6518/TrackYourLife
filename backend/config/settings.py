@@ -29,6 +29,9 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "accounts",
     "days",
+    "music",
+    "visionboard",
+    "friends",
 ]
 
 MIDDLEWARE = [

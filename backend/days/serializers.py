@@ -13,7 +13,7 @@ class DaySerializer(serializers.ModelSerializer):
             "date",
             "score",
             "note",
-            "is_public",
+            "visibility",
             "created_at",
             "updated_at",
         ]

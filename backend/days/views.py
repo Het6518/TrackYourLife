@@ -3,7 +3,8 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from accounts.models import avatar_url_for
+from accounts.models import avatar_url_for, location_for
+from friends.models import are_friends
 
 from .models import Day
 from .serializers import DaySerializer
@@ -23,10 +24,15 @@ class DayViewSet(viewsets.ModelViewSet):
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def public_users(request):
-    users = User.objects.filter(days__is_public=True).distinct().order_by("username")
+    users = User.objects.filter(days__visibility="public").distinct().order_by("username")
     return Response(
         [
-            {"id": u.id, "username": u.username, "avatar_url": avatar_url_for(u, request)}
+            {
+                "id": u.id,
+                "username": u.username,
+                "avatar_url": avatar_url_for(u, request),
+                "location": location_for(u),
+            }
             for u in users
         ]
     )
@@ -40,7 +46,15 @@ def public_user_days(request, username):
     except User.DoesNotExist:
         return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    days = Day.objects.filter(user=user, is_public=True)
+    viewer = request.user if request.user.is_authenticated else None
+    if viewer == user:
+        visible_statuses = ["private", "friends", "public"]
+    elif are_friends(viewer, user):
+        visible_statuses = ["friends", "public"]
+    else:
+        visible_statuses = ["public"]
+
+    days = Day.objects.filter(user=user, visibility__in=visible_statuses)
     return Response(
         {
             "user": {

@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { Pencil } from "lucide-react";
+import DayComposer from "../components/DayComposer";
 import DayModal from "../components/DayModal";
 import EntryStack from "../components/EntryStack";
 import InspireCard from "../components/InspireCard";
-import PromptBar from "../components/PromptBar";
+import MineralRatioCard from "../components/MineralRatioCard";
+import MomentumCard from "../components/MomentumCard";
 import RecentEntries from "../components/RecentEntries";
-import ScoreCard from "../components/ScoreCard";
 import SearchBar from "../components/SearchBar";
 import Shell from "../components/Shell";
+import SolarActivityCard from "../components/SolarActivityCard";
 import Trends from "../components/Trends";
+import ViewCard from "../components/ViewCard";
 import YearHeatmap from "../components/YearHeatmap";
 import { daysApi } from "../api/client";
-import { averageScore, bestStreak, dayToIso, todayIso } from "../utils/date";
+import { averageScore, bestStreak, todayIso, truncateNote } from "../utils/date";
 import { downloadCsv } from "../utils/export";
 
-const freshForm = (date = todayIso()) => ({ date, score: 7, note: "", is_public: false });
+const freshForm = (date = todayIso()) => ({ date, score: 7, note: "", visibility: "private" });
 
-export default function DashboardPage({ token, user, onLogout, onUserChange, navigate }) {
+export default function DashboardPage({ token, user, onLogout, onUserChange, navigate, weather }) {
   const [days, setDays] = useState([]);
   const [publicUsers, setPublicUsers] = useState([]);
   const [form, setForm] = useState(freshForm());
@@ -30,23 +33,16 @@ export default function DashboardPage({ token, user, onLogout, onUserChange, nav
     entries: days.length,
     average: averageScore(days),
     streak: bestStreak(days),
-    publicCount: days.filter((day) => day.is_public).length,
+    publicCount: days.filter((day) => day.visibility === "public").length,
   }), [days]);
+
+  const sortedByDate = useMemo(() => [...days].sort((a, b) => b.date.localeCompare(a.date)), [days]);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return days;
     return days.filter((day) => day.note.toLowerCase().includes(term) || day.date.includes(term));
   }, [days, query]);
-
-  const week = useMemo(() => {
-    const logged = new Set(days.map((day) => day.date));
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (6 - index));
-      return logged.has(dayToIso(date));
-    });
-  }, [days]);
 
   async function loadDays() {
     setDays(await daysApi.list(token));
@@ -58,7 +54,9 @@ export default function DashboardPage({ token, user, onLogout, onUserChange, nav
   }, []);
 
   function focusPrompt() {
-    document.getElementById("prompt-input")?.focus();
+    const el = document.getElementById("composer-note");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.focus();
   }
 
   function selectDate(date, day) {
@@ -72,7 +70,7 @@ export default function DashboardPage({ token, user, onLogout, onUserChange, nav
   }
 
   function editDay(day) {
-    setForm({ id: day.id, date: day.date, score: day.score, note: day.note, is_public: day.is_public });
+    setForm({ id: day.id, date: day.date, score: day.score, note: day.note, visibility: day.visibility });
     setSelectedDay(null);
     focusPrompt();
   }
@@ -80,7 +78,7 @@ export default function DashboardPage({ token, user, onLogout, onUserChange, nav
   async function save(event) {
     event.preventDefault();
     setError("");
-    const payload = { date: form.date, score: form.score, note: form.note || "", is_public: Boolean(form.is_public) };
+    const payload = { date: form.date, score: form.score, note: form.note || "", visibility: form.visibility || "private" };
     try {
       if (form.id) await daysApi.update(form.id, payload, token);
       else await daysApi.create(payload, token);
@@ -99,37 +97,52 @@ export default function DashboardPage({ token, user, onLogout, onUserChange, nav
   }
 
   return (
-    <Shell active="dashboard" user={user} token={token} navigate={navigate} onLogout={onLogout} onUserChange={onUserChange}>
-      <div className="stage-grid">
+    <Shell active="dashboard" user={user} token={token} navigate={navigate} onLogout={onLogout} onUserChange={onUserChange} weather={weather}>
+      <div className="stat-row">
+        <div className="stat-row-side">
+          <span className="stat-pill"><b>{stats.entries}</b>logged</span>
+          <span className="stat-pill"><b>{stats.average}</b>average</span>
+        </div>
+        <p className="eyebrow">Your Daymap · {year}</p>
+        <div className="stat-row-side">
+          <span className="stat-pill"><b>{stats.streak}d</b>best streak</span>
+          <span className="stat-pill"><b>{stats.publicCount}</b>public</span>
+        </div>
+      </div>
+
+      <div className="orbit-grid">
+        <div className="orbit-column">
+          <SolarActivityCard today={today} />
+          <MomentumCard days={sortedByDate} />
+        </div>
+
         <div className="hero-wrap">
           <section className="hero">
             <div className="hero-top">
-              <p className="eyebrow">Your Daymap · {year}</p>
               <h1>{today ? `Today is a ${today.score}/10` : "How was today?"}</h1>
-              <p>{today?.note || "Pick a day on the map, or write a note below to log today."}</p>
-              <div className="stat-chips">
-                <span><b>{stats.entries}</b> logged</span>
-                <span><b>{stats.average}</b> average</span>
-                <span><b>{stats.streak}d</b> best streak</span>
-                <span><b>{stats.publicCount}</b> public</span>
-              </div>
+              <p>{today?.note ? truncateNote(today.note) : "Pick a day on the map, or write below to log today."}</p>
             </div>
             <div className="heat-card">
               <YearHeatmap days={days} year={year} onSelectDate={selectDate} />
             </div>
-            <PromptBar form={form} setForm={setForm} onSave={save} onDelete={remove} error={error} />
           </section>
-          <button className="notch-button" onClick={() => downloadCsv(days)} title="Download your entries (CSV)" aria-label="Download your entries as CSV">
-            <Download size={20} />
+          <button className="notch-button" onClick={focusPrompt} title="Jump to composer" aria-label="Jump to composer">
+            <Pencil size={18} />
           </button>
-          <ScoreCard form={form} setForm={setForm} week={week} />
         </div>
 
-        <div className="side">
-          <SearchBar value={query} onChange={setQuery} placeholder="Search notes or dates" />
-          <EntryStack entries={filtered} onSelect={setSelectedDay} empty={query ? "No entries match your search." : "Your saved entries will appear here."} />
-          <InspireCard users={publicUsers} onOpen={() => navigate("explore")} />
+        <div className="orbit-column">
+          <ViewCard days={sortedByDate} />
+          <MineralRatioCard days={days} onExport={() => downloadCsv(days)} />
         </div>
+      </div>
+
+      <DayComposer form={form} setForm={setForm} onSave={save} onDelete={form.id ? remove : null} error={error} streak={stats.streak} entries={stats.entries} />
+
+      <div className="search-row">
+        <SearchBar value={query} onChange={setQuery} placeholder="Search notes or dates" />
+        <EntryStack entries={filtered} onSelect={setSelectedDay} empty={query ? "No entries match your search." : "Your saved entries will appear here."} />
+        <InspireCard users={publicUsers} onOpen={() => navigate("explore")} />
       </div>
 
       <section className="lower" id="lower">

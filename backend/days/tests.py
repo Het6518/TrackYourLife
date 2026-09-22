@@ -63,8 +63,8 @@ class PublicAPITests(APITestCase):
     def setUp(self):
         self.alice = User.objects.create_user("alice", password="pw12345678")
         self.bob = User.objects.create_user("bob", password="pw12345678")
-        Day.objects.create(user=self.alice, date="2026-01-01", score=8, note="public", is_public=True)
-        Day.objects.create(user=self.alice, date="2026-01-02", score=3, note="secret", is_public=False)
+        Day.objects.create(user=self.alice, date="2026-01-01", score=8, note="public", visibility="public")
+        Day.objects.create(user=self.alice, date="2026-01-02", score=3, note="secret", visibility="private")
 
     def test_public_days_exclude_private_entries(self):
         response = self.client.get("/api/public/users/alice/days/")
