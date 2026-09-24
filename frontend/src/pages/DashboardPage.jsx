@@ -20,7 +20,7 @@ import { downloadCsv } from "../utils/export";
 
 const freshForm = (date = todayIso()) => ({ date, score: 7, note: "", visibility: "private" });
 
-export default function DashboardPage({ token, user, onLogout, onUserChange, navigate, weather }) {
+export default function DashboardPage({ token, user, onLogout, onUserChange, navigate, theme }) {
   const [days, setDays] = useState([]);
   const [publicUsers, setPublicUsers] = useState([]);
   const [form, setForm] = useState(freshForm());
@@ -98,7 +98,7 @@ export default function DashboardPage({ token, user, onLogout, onUserChange, nav
   }
 
   return (
-    <Shell active="dashboard" user={user} token={token} navigate={navigate} onLogout={onLogout} onUserChange={onUserChange} weather={weather}>
+    <Shell active="dashboard" user={user} token={token} navigate={navigate} onLogout={onLogout} onUserChange={onUserChange} theme={theme}>
       <div className="stat-row">
         <div className="stat-row-side">
           <span className="stat-pill"><b>{stats.entries}</b>logged</span>

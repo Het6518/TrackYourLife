@@ -10,6 +10,7 @@ from .views import (
     RegisterView,
     ThemeAccentView,
     ThemeBackgroundView,
+    ThemeEffectView,
 )
 
 urlpatterns = [
@@ -22,4 +23,5 @@ urlpatterns = [
     path("me/board-style/", BoardStyleView.as_view(), name="board-style"),
     path("me/theme-background/", ThemeBackgroundView.as_view(), name="theme-background"),
     path("me/theme-accent/", ThemeAccentView.as_view(), name="theme-accent"),
+    path("me/theme-effect/", ThemeEffectView.as_view(), name="theme-effect"),
 ]

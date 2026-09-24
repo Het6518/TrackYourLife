@@ -27,12 +27,21 @@ export default function MapPage({ navigate, user, ...shell }) {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
   const [view, setView] = useState({ x: 0, y: 0, k: 1 });
+  const [sharing, setSharing] = useState(false);
   const dragRef = useRef(null);
   const svgRef = useRef(null);
 
   useEffect(() => {
     daysApi.publicUsers().then(setProfiles).catch((err) => setError(err.message));
   }, []);
+
+  function share() {
+    setError("");
+    setSharing(true);
+    shell.shareLocation()
+      .catch(() => setError("Couldn't get your location — check your browser's permission and try again."))
+      .finally(() => setSharing(false));
+  }
 
   const pinned = useMemo(() => {
     const withLocation = profiles.filter((p) => p.location && p.username !== user?.username);
@@ -80,6 +89,11 @@ export default function MapPage({ navigate, user, ...shell }) {
           <p className="eyebrow">Where Daymaps are happening</p>
           <div className="stat-row-side">
             <span className="stat-pill"><b>{user?.location ? "Shared" : "Hidden"}</b>your location</span>
+            {!user?.location && (
+              <button type="button" className="soft-button" onClick={share} disabled={sharing}>
+                {sharing ? "Sharing…" : "Share my location"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -149,7 +163,7 @@ export default function MapPage({ navigate, user, ...shell }) {
 
         {!user?.location && (
           <p className="map-hint">
-            We couldn't read your location (permission denied or unavailable). You can retry by re-logging in and allowing location access.
+            Your location is hidden by default. Tap "Share my location" above to appear on the map for other users.
           </p>
         )}
       </div>

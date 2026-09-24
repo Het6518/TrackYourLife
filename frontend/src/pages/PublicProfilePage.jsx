@@ -91,7 +91,7 @@ export default function PublicProfilePage({ username, navigate, ...shell }) {
       <div className="stage-grid">
         <section className="hero">
           <div className="hero-top profile-title">
-            <Avatar user={profile.user} className="large" />
+            <Avatar user={profile.user} className="large" viewable />
             <div>
               <p className="eyebrow">Public Daymap · {year}</p>
               <h1>{profile.user.username}</h1>

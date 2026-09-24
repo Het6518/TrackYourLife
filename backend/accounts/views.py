@@ -14,6 +14,7 @@ from .serializers import (
     RegisterSerializer,
     ThemeAccentSerializer,
     ThemeBackgroundSerializer,
+    ThemeEffectSerializer,
     UserSerializer,
 )
 
@@ -141,7 +142,7 @@ class ThemeBackgroundView(APIView):
 
 class ThemeAccentView(APIView):
     """The app-wide accent color override — blank clears it back to the
-    automatic weather-driven accent."""
+    default accent."""
 
     permission_classes = [permissions.IsAuthenticated]
 
@@ -150,5 +151,20 @@ class ThemeAccentView(APIView):
         serializer.is_valid(raise_exception=True)
         profile, _ = Profile.objects.get_or_create(user=request.user)
         profile.theme_accent_color = serializer.validated_data["accent_color"]
+        profile.save()
+        return Response(UserSerializer(request.user, context={"request": request}).data)
+
+
+class ThemeEffectView(APIView):
+    """The app-wide background effect the user picked — none, winter, summer,
+    rain, or cherry blossom."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        serializer = ThemeEffectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile.theme_effect = serializer.validated_data["effect"]
         profile.save()
         return Response(UserSerializer(request.user, context={"request": request}).data)

@@ -51,6 +51,8 @@ export const authApi = {
   removeThemeBackground: (token) => request("/auth/me/theme-background/", { method: "DELETE" }, token),
   updateThemeAccent: (accentColor, token) =>
     request("/auth/me/theme-accent/", { method: "PUT", body: JSON.stringify({ accent_color: accentColor }) }, token),
+  updateThemeEffect: (effect, token) =>
+    request("/auth/me/theme-effect/", { method: "PUT", body: JSON.stringify({ effect }) }, token),
 };
 
 export const daysApi = {

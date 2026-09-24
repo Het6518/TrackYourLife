@@ -7,7 +7,7 @@ import ThemeSettings from "./ThemeSettings";
 
 // Top bar layout mirrors the reference dashboard: small mark far left,
 // section tabs centered, status + notification + avatar far right.
-export default function Shell({ active, user, token, navigate, onLogout, onUserChange, weather, children }) {
+export default function Shell({ active, user, token, navigate, onLogout, onUserChange, theme, children }) {
   const fileInput = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [error, setError] = useState("");
@@ -62,7 +62,7 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
         </nav>
 
         <div className="topbar-right">
-          {weather && <span className="topbar-status">{weather.label}{typeof weather.temperature === "number" ? ` · ${Math.round(weather.temperature)}°C` : ""}</span>}
+          {theme && theme.key !== "clear" && <span className="topbar-status">{theme.label}</span>}
           <ThemeSettings user={user} token={token} onUserChange={onUserChange} />
           <button className="topbar-icon" title="Explore public Daymaps" aria-label="Explore public Daymaps" onClick={() => navigate("explore")}>
             <Bell size={17} />

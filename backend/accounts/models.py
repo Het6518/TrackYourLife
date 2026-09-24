@@ -14,10 +14,18 @@ class Profile(models.Model):
     # the vision board's background: "transparent" (the default glass look,
     # weather photo shows through) or a "#rrggbb" the user picked themselves
     board_background = models.CharField(max_length=20, default="transparent")
-    # app-wide personalization, both optional — leaving these blank means
-    # "use the automatic weather theme" (see utils/weather.js on the frontend)
+    # app-wide personalization, all optional — leaving these blank means "no
+    # override" (plain default look)
     theme_background = models.ImageField(upload_to="theme_backgrounds/", blank=True)
-    theme_accent_color = models.CharField(max_length=7, blank=True)  # "#rrggbb", or "" for automatic
+    theme_accent_color = models.CharField(max_length=7, blank=True)  # "#rrggbb", or "" for none
+    THEME_EFFECT_CHOICES = [
+        ("", "None"),
+        ("winter", "Winter"),
+        ("summer", "Summer"),
+        ("rain", "Rain"),
+        ("blossom", "Cherry Blossom"),
+    ]
+    theme_effect = models.CharField(max_length=10, choices=THEME_EFFECT_CHOICES, blank=True)
 
     def __str__(self):
         return f"Profile of {self.user.username}"
@@ -54,3 +62,8 @@ def theme_background_url_for(user, request=None):
 def theme_accent_color_for(user):
     profile = Profile.objects.filter(user=user).first()
     return profile.theme_accent_color if profile else ""
+
+
+def theme_effect_for(user):
+    profile = Profile.objects.filter(user=user).first()
+    return profile.theme_effect if profile else ""

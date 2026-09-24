@@ -9,10 +9,9 @@ import MapPage from "./pages/MapPage"; // user location map
 import PublicProfilePage from "./pages/PublicProfilePage"; // public profile
 import VisionBoardPage from "./pages/VisionBoardPage"; // vision board
 import MusicPlayer from "./components/MusicPlayer";
-import ThemeDevSwitcher from "./components/ThemeDevSwitcher";
 import WeatherFX from "./components/WeatherFX";
 import { getBrowserLocation } from "./utils/geolocation";
-import { applyPersonalization, applyTheme, detectWeatherTheme, instantThemeGuess } from "./utils/weather";
+import { applyPersonalization, applyTheme, effectTheme } from "./utils/weather";
 import "./styles.css"; // will move to tailwind later
 
 function parseLocation() {
@@ -35,28 +34,17 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem("track_token") || "");  // token in localstorage 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(Boolean(token));
-  const [weather, setWeather] = useState(null);
   const [revealed, setRevealed] = useState(false);
 
-  useEffect(() => {
-    const guess = instantThemeGuess();
-    applyTheme(guess);
-    setWeather(guess);
-    detectWeatherTheme()
-      .then((theme) => {
-        applyTheme(theme);
-        setWeather(theme);
-      })
-      .catch(() => {});
-  }, []);
+  const theme = effectTheme(user?.theme_effect);
 
-  // Re-assert the user's own background/accent overrides every time the
-  // weather theme changes (weather always writes --bg-image/data-theme
-  // first) or the user's saved personalization changes — otherwise a later
-  // weather update would silently clobber whatever they picked.
+  // Apply the chosen effect theme, then re-assert the user's own
+  // background/accent overrides on top of it — otherwise a later effect
+  // change would silently clobber whatever they picked.
   useEffect(() => {
+    applyTheme(theme);
     applyPersonalization(user);
-  }, [user?.theme_background_url, user?.theme_accent_color, weather]);
+  }, [theme.key, user?.theme_background_url, user?.theme_accent_color]);
 // Imagine the user refreshes the page.
 
 // They have a token:
@@ -88,7 +76,6 @@ function App() {
     authApi.me(token) // hitting an endpoint to get the user data based on the token and if the token is valid then we will get the user data and if the token is not valid then we will get an error and we will remove the token from local storage and set the token to empty string and set the user to null
       .then((me) => {
         setUser(me);
-        if (!me.location) shareLocation(token); // refresh a stale/missing location once per session
       })
       .catch(() => {
         localStorage.removeItem("track_token");
@@ -103,22 +90,19 @@ function App() {
     setRoute({ page, username });
   } // navigate function is used to navigate to different pages and we are using window.history.pushState to change the url without reloading the page and we are using setRoute to update the route based on the url
 
-  // Best-effort: ask the browser for the user's coordinates and store them
-  // on their profile, so they show up on the Map tab. Silently does nothing
-  // if the permission is denied or unavailable — this should never block
-  // login or show an error to the user.
-  function shareLocation(authToken) {
-    getBrowserLocation()
-      .then(({ lat, lng }) => authApi.updateLocation(lat, lng, authToken))
-      .then((updatedUser) => updatedUser && setUser(updatedUser))
-      .catch(() => {});
+  // Opt-in only: the user explicitly taps "Share my location" on the Map
+  // tab. Never called automatically — location isn't required to use the
+  // app. Silently does nothing if the permission is denied or unavailable.
+  function shareLocation() {
+    return getBrowserLocation()
+      .then(({ lat, lng }) => authApi.updateLocation(lat, lng, token))
+      .then((updatedUser) => updatedUser && setUser(updatedUser));
   }
 
   function onAuth(data) {
     localStorage.setItem("track_token", data.token);
     setToken(data.token);
     setUser(data.user);
-    shareLocation(data.token);
     navigate("dashboard");
   }
 
@@ -137,25 +121,18 @@ function App() {
     }
   }, [loading]);
 
-  function overrideTheme(theme) {
-    applyTheme(theme);
-    setWeather(theme);
-  }
-
   if (loading) return <main className="loading"><div className="loading-orb" />Loading...</main>;
   const stageClass = `app-stage ${revealed ? "revealed" : ""}`;
-  const fxByTheme = { winter: "snow", monsoon: "rain", blossom: "petal", spring: "leaf", summer: "sun" };
-  const fxMode = fxByTheme[weather?.key] || null;
-  const baseOverlays = <><WeatherFX mode={fxMode} /><ThemeDevSwitcher current={weather} onSelect={overrideTheme} /></>;
+  const baseOverlays = <WeatherFX mode={theme.fx} />;
   if (!token || !user) return <><div className={stageClass}><AuthPage onAuth={onAuth} /></div>{baseOverlays}</>;
   const overlays = <>{baseOverlays}<MusicPlayer token={token} /></>;
-  const shell = { user, token, onLogout: logout, onUserChange: setUser, weather };
+  const shell = { user, token, onLogout: logout, onUserChange: setUser, theme, shareLocation };
   if (route.page === "explore") return <><div className={stageClass}><ExplorePage navigate={navigate} {...shell} /></div>{overlays}</>;
   if (route.page === "map") return <><div className={stageClass}><MapPage navigate={navigate} {...shell} /></div>{overlays}</>;
   if (route.page === "board") return <><div className={stageClass}><VisionBoardPage navigate={navigate} {...shell} /></div>{overlays}</>;
   if (route.page === "friends") return <><div className={stageClass}><FriendsPage navigate={navigate} {...shell} /></div>{overlays}</>;
   if (route.page === "profile") return <><div className={stageClass}><PublicProfilePage username={route.username} navigate={navigate} {...shell} /></div>{overlays}</>;
-  return <><div className={stageClass}><DashboardPage token={token} user={user} onLogout={logout} onUserChange={setUser} navigate={navigate} weather={weather} /></div>{overlays}</>;
+  return <><div className={stageClass}><DashboardPage token={token} user={user} onLogout={logout} onUserChange={setUser} navigate={navigate} theme={theme} /></div>{overlays}</>;
 }
 
 createRoot(document.getElementById("root")).render(<App />);

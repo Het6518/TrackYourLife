@@ -5,11 +5,13 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from .models import (
+    Profile,
     avatar_url_for,
     board_background_for,
     location_for,
     theme_accent_color_for,
     theme_background_url_for,
+    theme_effect_for,
 )
 
 HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -21,12 +23,13 @@ class UserSerializer(serializers.ModelSerializer):
     board_background = serializers.SerializerMethodField()
     theme_background_url = serializers.SerializerMethodField()
     theme_accent_color = serializers.SerializerMethodField()
+    theme_effect = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             "id", "username", "email", "avatar_url", "location", "board_background",
-            "theme_background_url", "theme_accent_color",
+            "theme_background_url", "theme_accent_color", "theme_effect",
         ]
 
     def get_avatar_url(self, user):
@@ -43,6 +46,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_theme_accent_color(self, user):
         return theme_accent_color_for(user)
+
+    def get_theme_effect(self, user):
+        return theme_effect_for(user)
 
 
 class LocationSerializer(serializers.Serializer):
@@ -82,13 +88,18 @@ class ThemeBackgroundSerializer(serializers.Serializer):
 
 
 class ThemeAccentSerializer(serializers.Serializer):
-    # blank string means "clear it — go back to the automatic weather accent"
+    # blank string means "clear it — no accent override"
     accent_color = serializers.CharField(max_length=7, allow_blank=True)
 
     def validate_accent_color(self, value):
         if value and not HEX_COLOR_RE.match(value):
             raise serializers.ValidationError("Must be blank or a #rrggbb color.")
         return value
+
+
+class ThemeEffectSerializer(serializers.Serializer):
+    # blank string means "none"
+    effect = serializers.ChoiceField(choices=[c for c, _ in Profile.THEME_EFFECT_CHOICES], allow_blank=True)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
