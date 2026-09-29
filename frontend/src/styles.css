@@ -120,6 +120,7 @@ h3 { margin-bottom: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em
 .topbar-status { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
 .topbar-icon { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--panel-border); border-radius: 50%; background: rgba(255,255,255,0.05); color: var(--white); padding: 0; }
 .topbar-icon:hover { background: var(--orange); color: var(--black); border-color: var(--orange); }
+.topbar-menu-toggle { display: none; }
 .avatar-wrap { position: relative; }
 .avatar-button { border: 0; background: none; padding: 0; border-radius: 50%; }
 .avatar-menu { position: absolute; right: 0; top: calc(100% + 12px); z-index: 30; min-width: 190px; display: grid; gap: 8px; border-radius: 20px; background: var(--panel-strong); backdrop-filter: blur(18px); border: 1px solid var(--panel-border); padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
@@ -695,13 +696,21 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
   .stat-chips { flex-wrap: wrap; }
 }
 
+@media (max-width: 1180px) and (min-width: 769px) {
+  .topbar-tabs { gap: 4px; }
+  .topbar-tab { padding: 9px 12px; }
+  .topbar-tab:not(.active) span { display: none; }
+}
+
 @media (max-width: 768px) {
   .frame { margin: 0; padding: 12px; }
   .stage { padding-bottom: 120px; }
   .topbar { flex-wrap: wrap; border-radius: 22px; padding: 10px 14px; gap: 10px; }
-  .topbar-tabs { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
-  .topbar-tab { flex: 0 0 auto; padding: 8px 12px; }
-  .topbar-tab span { display: inline; font-size: 13px; }
+  .topbar-mark { flex: 1; min-width: 0; }
+  .topbar-menu-toggle { display: grid; }
+  .topbar-tabs { display: none; order: 3; width: 100%; flex: 0 0 100%; flex-direction: column; align-items: stretch; gap: 4px; padding-top: 8px; border-top: 1px solid var(--panel-border); }
+  .topbar-tabs.open { display: flex; }
+  .topbar-tab { justify-content: flex-start; padding: 11px 14px; font-size: 14px; }
   .orbit-column { grid-template-columns: 1fr; }
   .hero { padding: 18px; border-radius: 22px; }
   .hero-top.profile-title { flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -724,6 +733,8 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
 @media (max-width: 480px) {
   .stage { padding-bottom: 130px; }
   .topbar-mark b { display: none; }
+  .topbar-status { display: none; }
+  .topbar-right { gap: 6px; }
   .stat-chips { grid-template-columns: 1fr; }
   .section-heading { flex-wrap: wrap; gap: 8px; }
   .modal-score-row { flex-direction: column; align-items: flex-start; gap: 10px; }

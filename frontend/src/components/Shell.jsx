@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Bell, Camera, Compass, Home, LogOut, MapPin, Pin, Trash2, UserCog, Users } from "lucide-react";
+import { Bell, Camera, Compass, Home, LogOut, MapPin, Menu, Pin, Trash2, UserCog, Users, X } from "lucide-react";
 import { authApi } from "../api/client";
 import Avatar from "./Avatar";
 import StarMark from "./StarMark";
@@ -10,6 +10,7 @@ import ThemeSettings from "./ThemeSettings";
 export default function Shell({ active, user, token, navigate, onLogout, onUserChange, theme, children }) {
   const fileInput = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [error, setError] = useState("");
 
   async function upload(event) {
@@ -53,9 +54,14 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
           <b>TrackYourLife</b>
         </div>
 
-        <nav className="topbar-tabs">
+        <nav id="topbar-tabs" className={`topbar-tabs ${navOpen ? "open" : ""}`}>
           {tabs.map(({ key, label, icon: Icon, onClick }) => (
-            <button key={key} className={`topbar-tab ${active === key ? "active" : ""}`} onClick={onClick}>
+            <button
+              key={key}
+              className={`topbar-tab ${active === key ? "active" : ""}`}
+              title={label}
+              onClick={() => { setNavOpen(false); onClick(); }}
+            >
               <Icon size={16} /> <span>{label}</span>
             </button>
           ))}
@@ -82,6 +88,15 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
               </div>
             )}
           </div>
+          <button
+            className="topbar-icon topbar-menu-toggle"
+            aria-label={navOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={navOpen}
+            aria-controls="topbar-tabs"
+            onClick={() => setNavOpen(!navOpen)}
+          >
+            {navOpen ? <X size={17} /> : <Menu size={17} />}
+          </button>
         </div>
       </header>
 
