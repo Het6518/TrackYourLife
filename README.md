@@ -76,7 +76,8 @@ DRF **TokenAuthentication** (`rest_framework.authtoken`). Register/login issue a
 - Django REST Framework `>=3.15`
 - django-cors-headers `>=4.3`
 - Pillow `>=10.0` (image handling)
-- psycopg2-binary `>=2.9` (optional — only needed if you point it at Postgres)
+- PostgreSQL (psycopg2-binary `>=2.9`, dj-database-url `>=2.1`) — local Docker in dev, Neon in production
+- python-dotenv `>=1.0` (loads `backend/.env` in dev)
 - gunicorn `>=22.0` / whitenoise `>=6.6` (production serving)
 
 **Frontend**
@@ -100,7 +101,11 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-By default (no Postgres env vars set) it uses a local `db.sqlite3` — nothing else to configure for local development.
+The backend needs a PostgreSQL database. For local development, run one in Docker:
+```bash
+docker run -d --name postgres -p 5432:5432 -e POSTGRES_USER=app -e POSTGRES_PASSWORD=app_password -e POSTGRES_DB=trackyourlife postgres:17
+```
+and set `DATABASE_URL=postgres://app:app_password@localhost:5432/trackyourlife` in `backend/.env`. In production, set `DATABASE_URL` to the Neon connection string (keep `?sslmode=require`).
 
 ### Frontend
 ```bash
@@ -120,7 +125,7 @@ npm run dev
 | `DJANGO_ALLOWED_HOSTS` | Comma-separated hostnames | Production only |
 | `DJANGO_CORS_ORIGINS` | Comma-separated origins allowed to call the API (also used as `CSRF_TRUSTED_ORIGINS`) | Defaults to `localhost:5173` / `127.0.0.1:5173` |
 | `DJANGO_SSL_REDIRECT` | `True`/`False` | No |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` | Use Postgres instead of SQLite | No |
+| `DATABASE_URL` | PostgreSQL connection string (local Docker or Neon) | Yes |
 
 **`frontend/.env`**
 | Variable | Purpose | Required |

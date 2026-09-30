@@ -5,7 +5,13 @@ Django settings for config project.
 import os
 from pathlib import Path
 
+import dj_database_url
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# local dev convenience; on the host, real environment variables take precedence
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
@@ -65,24 +71,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-if os.environ.get("POSTGRES_DB"):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ["POSTGRES_DB"],
-            "USER": os.environ.get("POSTGRES_USER", "postgres"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
-            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+if not os.environ.get("DATABASE_URL"):
+    raise RuntimeError("Set DATABASE_URL (see backend/.env.example).")
+
+# a single postgres:// URL — local docker in dev, Neon's connection string in production
+DATABASES = {
+    "default": dj_database_url.config(
+        conn_max_age=600,  # reuse connections instead of reconnecting per request
+        conn_health_checks=True,  # Neon suspends idle computes; drop dead connections cleanly
+    )
+}
+# Neon's pooled endpoint (-pooler host) runs PgBouncer in transaction mode,
+# which doesn't support the server-side cursors Django uses for .iterator()
+DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
