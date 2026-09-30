@@ -3,6 +3,7 @@ Django settings for config project.
 """
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -99,9 +100,27 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"  # `collectstatic` target for production
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# uploads (avatars, songs, backgrounds, vision-board images) go to Cloudinary when
+# its credentials are set — the host's disk is wiped on every deploy. Without them
+# (or under `manage.py test`) files stay in MEDIA_ROOT. cloudinary_storage reads
+# CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET straight from the environment.
+CLOUDINARY_ENABLED = bool(os.environ.get("CLOUDINARY_CLOUD_NAME")) and "test" not in sys.argv[1:2]
+
+STORAGES = {
+    "default": {
+        "BACKEND": (
+            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            if CLOUDINARY_ENABLED
+            else "django.core.files.storage.FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # comma-separated list of allowed frontend origins in production, e.g.

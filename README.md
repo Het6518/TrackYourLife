@@ -78,6 +78,7 @@ DRF **TokenAuthentication** (`rest_framework.authtoken`). Register/login issue a
 - Pillow `>=10.0` (image handling)
 - PostgreSQL (psycopg2-binary `>=2.9`, dj-database-url `>=2.1`) — local Docker in dev, Neon in production
 - python-dotenv `>=1.0` (loads `backend/.env` in dev)
+- cloudinary / django-cloudinary-storage (uploaded media in production)
 - gunicorn `>=22.0` / whitenoise `>=6.6` (production serving)
 
 **Frontend**
@@ -126,6 +127,7 @@ npm run dev
 | `DJANGO_CORS_ORIGINS` | Comma-separated origins allowed to call the API (also used as `CSRF_TRUSTED_ORIGINS`) | Defaults to `localhost:5173` / `127.0.0.1:5173` |
 | `DJANGO_SSL_REDIRECT` | `True`/`False` | No |
 | `DATABASE_URL` | PostgreSQL connection string (local Docker or Neon) | Yes |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Store uploads on Cloudinary | Production only — without them uploads go to `backend/media/` |
 
 **`frontend/.env`**
 | Variable | Purpose | Required |
@@ -133,4 +135,4 @@ npm run dev
 | `VITE_API_URL` | Backend API base URL | No — defaults to `http://127.0.0.1:8000/api` |
 | `VITE_YOUTUBE_API_KEY` | Enables "Find a song" YouTube search in the music player | No — app works without it, that tab just shows a setup hint |
 
-Uploaded media (avatars, songs, background photos, vision-board images) is stored on the local filesystem under `backend/media/` in this setup — no cloud storage is configured.
+Uploaded media (avatars, songs, background photos, vision-board images) is stored on Cloudinary when the `CLOUDINARY_*` variables are set (song audio uses Cloudinary's video resource type), and on the local filesystem under `backend/media/` otherwise. Tests always use the local filesystem.
