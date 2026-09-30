@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"; // hooks 
 import { createRoot } from "react-dom/client"; // to create the root of the app now here is where we will render the app
+import { Analytics } from "@vercel/analytics/react";
 import { authApi } from "./api/client";
 import AuthPage from "./pages/AuthPage"; // auth page 
 import DashboardPage from "./pages/DashboardPage"; // dashboard
@@ -135,4 +136,9 @@ function App() {
   return <><div className={stageClass}><DashboardPage token={token} user={user} onLogout={logout} onUserChange={setUser} navigate={navigate} theme={theme} /></div>{overlays}</>;
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  <>
+    <App />
+    <Analytics />
+  </>
+);
