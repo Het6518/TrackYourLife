@@ -17,8 +17,11 @@ export default function SolarActivityCard({ today }) {
         <Gauge value={pct} max={100} size={140} stroke={12} />
         <div className="gauge-center">
           <strong>{score != null ? score : "—"}<i>/10</i></strong>
-          <span className={`mood-badge ${moodClass}`}>{mood}</span>
         </div>
+      </div>
+      {/* below the dial, not inside it — the ring's ~104px hole is too narrow for the badge */}
+      <div className="gauge-caption">
+        <span className={`mood-badge ${moodClass}`}>{mood}</span>
       </div>
     </section>
   );

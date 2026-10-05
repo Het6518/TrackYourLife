@@ -12,5 +12,10 @@ urlpatterns = [
     path("api/", include("friends.urls")),
 ]
 
+if settings.CLOUDINARY_ENABLED:
+    from .cloudinary_media import media_proxy
+
+    urlpatterns.append(path("api/media/<str:resource_type>/<path:public_id>", media_proxy, name="media-proxy"))
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

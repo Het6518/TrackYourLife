@@ -3,6 +3,8 @@ import { ChevronUp, ListMusic, Pause, Play, Plus, Search, SkipBack, SkipForward,
 import { musicApi } from "../api/client";
 import { hasYouTubeKey, loadYouTubeIframeApi, searchYouTube } from "../utils/youtube";
 
+const MAX_AUDIO_BYTES = 15 * 1024 * 1024; // mirrors the backend's limit (music/serializers.py)
+
 // A song player with two independent sources:
 //  - your own uploaded library, played through a plain <audio> element
 //  - a live YouTube search, played through the real YouTube IFrame Player
@@ -28,6 +30,8 @@ export default function MusicPlayer({ token }) {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [fileName, setFileName] = useState("");
   const audioRef = useRef(null);
   const fileRef = useRef(null);
   const ytContainerRef = useRef(null);
@@ -130,6 +134,13 @@ export default function MusicPlayer({ token }) {
     setYtTrack(null);
   }
 
+  // the close button on the video: stop playback and hide the player (it
+  // stays mounted, just hidden, so the next search result plays instantly)
+  function closeYoutube() {
+    stopYoutube();
+    setPlaying(false);
+  }
+
   function playAt(i) {
     stopYoutube();
     setIndex(i);
@@ -174,15 +185,24 @@ export default function MusicPlayer({ token }) {
       setError("Give it a title and pick an audio file.");
       return;
     }
+    if (file.size > MAX_AUDIO_BYTES) {
+      setError("Audio file must be 15 MB or smaller.");
+      return;
+    }
     setError("");
+    setUploading(true);
     try {
       const song = await musicApi.upload({ title: form.title, artist: form.artist, file }, token);
       setSongs((s) => [song, ...s]);
       setForm({ title: "", artist: "" });
+      setFileName("");
       if (fileRef.current) fileRef.current.value = "";
       setUploadOpen(false);
     } catch (err) {
-      setError(err.message);
+      // fetch() itself rejects (TypeError) when the connection drops mid-upload
+      setError(err instanceof TypeError ? "Upload interrupted — check your connection and try again." : err.message);
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -242,11 +262,11 @@ export default function MusicPlayer({ token }) {
                     onChange={(event) => setForm({ ...form, artist: event.target.value })}
                   />
                   <label className="music-file-picker">
-                    <Upload size={14} /> Choose audio file
-                    <input ref={fileRef} type="file" accept="audio/*" hidden />
+                    <Upload size={14} /> {fileName || "Choose audio file"}
+                    <input ref={fileRef} type="file" accept="audio/*" hidden onChange={(event) => setFileName(event.target.files?.[0]?.name || "")} />
                   </label>
                   {error && <p className="error">{error}</p>}
-                  <button type="submit" className="primary small full">Add to library</button>
+                  <button type="submit" className="primary small full" disabled={uploading}>{uploading ? "Uploading…" : "Add to library"}</button>
                 </form>
               )}
 
@@ -330,6 +350,14 @@ export default function MusicPlayer({ token }) {
           too-small rendered size is a known trigger for YouTube/Chrome to
           auto-pause playback a couple seconds in. */}
       <div className={`music-yt-preview ${ytTrack ? "" : "hidden"}`}>
+        {ytTrack && (
+          <div className="music-yt-head">
+            <span>{ytTrack.title}</span>
+            <button type="button" onClick={closeYoutube} title="Stop and close video" aria-label="Stop and close video">
+              <X size={14} />
+            </button>
+          </div>
+        )}
         <div ref={ytContainerRef} />
       </div>
 

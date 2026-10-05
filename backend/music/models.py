@@ -8,9 +8,9 @@ def audio_storage():
     # Cloudinary files audio under its "video" resource type; the default
     # image storage would reject mp3s
     if settings.CLOUDINARY_ENABLED:
-        from cloudinary_storage.storage import VideoMediaCloudinaryStorage
+        from config.cloudinary_media import ProxiedVideoMediaCloudinaryStorage
 
-        return VideoMediaCloudinaryStorage()
+        return ProxiedVideoMediaCloudinaryStorage()
     return storages["default"]
 
 

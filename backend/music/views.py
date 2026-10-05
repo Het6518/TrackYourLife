@@ -1,8 +1,12 @@
-from rest_framework import permissions, viewsets
+import logging
+
+from rest_framework import permissions, serializers, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 
 from .models import Song
 from .serializers import SongSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class SongViewSet(viewsets.ModelViewSet):
@@ -17,7 +21,11 @@ class SongViewSet(viewsets.ModelViewSet):
         return Song.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except Exception as exc:  # storage backend failure — report it instead of a bare 500
+            logger.exception("Song upload failed")
+            raise serializers.ValidationError({"audio": f"Couldn't store that file: {exc}"})
 
     def get_serializer_context(self):
         return {"request": self.request}

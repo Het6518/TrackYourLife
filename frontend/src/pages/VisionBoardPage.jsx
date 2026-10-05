@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Image as ImageIcon, Paintbrush, Plus, StickyNote, Trash2, X } from "lucide-react";
+import { Check, Image as ImageIcon, Paintbrush, Plus, StickyNote, Trash2 } from "lucide-react";
 import Modal from "../components/Modal";
 import Shell from "../components/Shell";
 import { authApi, boardApi } from "../api/client";
@@ -99,8 +99,14 @@ export default function VisionBoardPage({ navigate, user, ...shell }) {
   }
 
   async function removePin(pin) {
+    if (!window.confirm(`Remove "${pin.title || (pin.kind === "image" ? "this photo" : "this note")}" from your board?`)) return;
     setPins((list) => list.filter((p) => p.id !== pin.id));
-    boardApi.remove(pin.id, shell.token).catch(() => {});
+    try {
+      await boardApi.remove(pin.id, shell.token);
+    } catch (err) {
+      setPins((list) => [...list, pin]); // put it back — the server still has it
+      setError(err.message);
+    }
   }
 
   function resetComposer() {
@@ -212,7 +218,19 @@ export default function VisionBoardPage({ navigate, user, ...shell }) {
               title="Drag to move · double-click to mark achieved"
             >
               <span className="board-pin-thumbtack" />
-              <button type="button" className="board-pin-remove" onClick={() => removePin(pin)} aria-label="Remove pin"><X size={12} /></button>
+              {/* stopPropagation keeps the pin's drag handler from capturing
+                  the pointer — capture retargets the click away from this button */}
+              <button
+                type="button"
+                className="board-pin-remove"
+                onPointerDown={(event) => event.stopPropagation()}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onClick={() => removePin(pin)}
+                title="Remove from board"
+                aria-label="Remove pin"
+              >
+                <Trash2 size={12} />
+              </button>
               {pin.kind === "image" ? (
                 <>
                   <div className="board-pin-photo"><img src={pin.image_url} alt={pin.title || "Vision board photo"} draggable={false} /></div>

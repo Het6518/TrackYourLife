@@ -108,11 +108,14 @@ MEDIA_ROOT = BASE_DIR / "media"
 # (or under `manage.py test`) files stay in MEDIA_ROOT. cloudinary_storage reads
 # CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET straight from the environment.
 CLOUDINARY_ENABLED = bool(os.environ.get("CLOUDINARY_CLOUD_NAME")) and "test" not in sys.argv[1:2]
+# serve uploads via this API (/api/media/...) instead of res.cloudinary.com,
+# which some ISPs block outright — see config/cloudinary_media.py
+CLOUDINARY_PROXY_MEDIA = os.environ.get("CLOUDINARY_PROXY_MEDIA", "True") == "True"
 
 STORAGES = {
     "default": {
         "BACKEND": (
-            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            "config.cloudinary_media.ProxiedMediaCloudinaryStorage"
             if CLOUDINARY_ENABLED
             else "django.core.files.storage.FileSystemStorage"
         ),
