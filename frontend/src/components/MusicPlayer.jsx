@@ -358,7 +358,12 @@ export default function MusicPlayer({ token }) {
             </button>
           </div>
         )}
-        <div ref={ytContainerRef} />
+        {/* YT.Player swaps the ref'd div for its iframe, so React must never
+            position anything relative to it — this wrapper is the stable
+            sibling React inserts the head before */}
+        <div>
+          <div ref={ytContainerRef} />
+        </div>
       </div>
 
       <div className="music-bar">
