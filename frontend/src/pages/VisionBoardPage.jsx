@@ -4,6 +4,7 @@ import Modal from "../components/Modal";
 import SearchBar from "../components/SearchBar";
 import Shell from "../components/Shell";
 import { authApi, boardApi } from "../api/client";
+import { prepareImage } from "../utils/image";
 
 const COLORS = ["cream", "accent", "accent-soft", "slate"];
 
@@ -48,6 +49,7 @@ function sortByCompleted(list) {
 export default function VisionBoardPage({ navigate, user, ...shell }) {
   const [pins, setPins] = useState([]);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [styleOpen, setStyleOpen] = useState(false);
   const [kind, setKind] = useState("text");
@@ -258,13 +260,17 @@ export default function VisionBoardPage({ navigate, user, ...shell }) {
       rotation: randomTilt(),
       z_index: topZ.current,
     };
-    if (kind === "image") payload.image = file;
+    setSaving(true);
     try {
+      // a polaroid is ~150px on the board, ~470px in the edit modal
+      if (kind === "image") payload.image = await prepareImage(file, { maxSize: 1600 });
       const pin = await boardApi.create(payload, shell.token);
       setPins((list) => [...list, pin]);
       resetComposer();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -554,7 +560,7 @@ export default function VisionBoardPage({ navigate, user, ...shell }) {
             )}
 
             {error && <p className="error">{error}</p>}
-            <button type="submit" className="primary full"><Plus size={15} /> Pin it to the board</button>
+            <button type="submit" className="primary full" disabled={saving}><Plus size={15} /> {saving ? "Pinning…" : "Pin it to the board"}</button>
           </form>
         </div>
       </Modal>

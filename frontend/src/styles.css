@@ -71,7 +71,8 @@ body::after {
 
 button, input, textarea { font: inherit; }
 button { cursor: pointer; transition: transform 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
-button:hover:not(:disabled) { transform: translateY(-1px); }
+/* only on real pointers — on touch screens :hover sticks after a tap */
+@media (hover: hover) { button:hover:not(:disabled) { transform: translateY(-1px); } }
 button:disabled { cursor: not-allowed; opacity: 0.45; }
 h1, h2, h3, p { margin-top: 0; }
 h2 { margin-bottom: 10px; font-size: 20px; color: var(--white); }
@@ -239,7 +240,7 @@ h3 { margin-bottom: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em
   text-shadow: 0 6px 28px rgba(0,0,0,0.5);
   white-space: nowrap;
 }
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .signature-greeting { display: none; } /* hero is short on mobile — avoid overlapping the heatmap */
 }
 
@@ -318,7 +319,7 @@ h3 { margin-bottom: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em
 .white-card { border-radius: 26px; background: var(--panel-strong); backdrop-filter: blur(18px); border: 1px solid var(--panel-border); padding: 22px; }
 .most-active, .rank-list { display: grid; gap: 10px; align-content: start; }
 .most-active button { display: flex; align-items: center; gap: 12px; border: 1px solid var(--panel-border); border-radius: 999px; background: rgba(255,255,255,0.05); color: var(--white); padding: 6px 16px 6px 6px; text-align: left; }
-.most-active button span { flex: 1; font-weight: 600; }
+.most-active button > span:not(.avatar) { flex: 1; font-weight: 600; }
 .rank-list button { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--panel-border); border-radius: 18px; background: rgba(255,255,255,0.05); color: var(--white); padding: 12px 16px; text-align: left; }
 .rank-list small { display: block; max-width: 140px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
 .rank-list b { color: var(--orange-2); }
@@ -404,7 +405,7 @@ input:focus, textarea:focus { border-color: var(--orange); box-shadow: 0 0 0 3px
    (.music-widget: 90, .theme-dev-switcher: 100) rather than nested inside
    .frame's own stacking context — so it needs to outrank all of them explicitly. */
 .modal-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); padding: 24px; }
-.day-modal { width: min(470px, 100%); max-height: calc(100vh - 48px); overflow: auto; border-radius: 32px; background: var(--panel-strong); backdrop-filter: blur(24px); border: 1px solid var(--panel-border); color: var(--white); padding: 28px; box-shadow: 0 40px 90px rgba(0,0,0,0.6); animation: rise-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.day-modal { width: min(470px, 100%); max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow: auto; border-radius: 32px; background: var(--panel-strong); backdrop-filter: blur(24px); border: 1px solid var(--panel-border); color: var(--white); padding: 28px; box-shadow: 0 40px 90px rgba(0,0,0,0.6); animation: rise-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .modal-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .modal-top h2 { margin: 4px 0 0; }
 .modal-score-row { display: flex; align-items: center; gap: 14px; margin: 24px 0 18px; }
@@ -656,6 +657,7 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
 
 /* Friends page */
 .friends-search-panel .search-bar { margin: 14px 0; }
+.stage > .panel + .panel { margin-top: 16px; }
 .friends-grid { display: grid; gap: 8px; }
 .friend-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--panel-border); border-radius: 16px; background: rgba(255,255,255,0.05); padding: 8px 12px; }
 .friend-row-identity { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; color: var(--white); padding: 0; font-weight: 600; }
@@ -742,6 +744,28 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
   .stat-row { flex-direction: column; }
   .hero-top { flex-wrap: wrap; }
   .stat-chips { flex-wrap: wrap; }
+
+  /* single-column hero has no open photo space for the floating greeting —
+     it landed on top of the headline. Put it in flow above the headline. */
+  .signature-greeting { position: static; transform: none; text-align: center; }
+
+  /* dashboard, single column: the composer is the page's main job, so pull
+     it up right under the heatmap instead of below four chart cards.
+     display:contents flattens the orbit grid so its pieces can be reordered
+     alongside the composer. */
+  .stage:has(> .orbit-grid) { display: flex; flex-direction: column; gap: 20px; }
+  .stage:has(> .orbit-grid) > * { margin-top: 0; margin-bottom: 0; }
+  .stage > .orbit-grid { display: contents; }
+  .stage > .stat-row { order: 0; }
+  .orbit-grid > .hero-wrap { order: 1; }
+  .stage > .composer { order: 2; }
+  .orbit-grid > .orbit-column { order: 3; }
+  .stage > .search-row { order: 4; margin-top: 0; }
+  .stage > .lower { order: 5; margin-top: 0; }
+
+  /* explore: search sits above the list it filters, not below it */
+  .stage-grid:has(> .explore-hero) > .side { display: contents; }
+  .stage-grid:has(> .explore-hero) .search-bar { order: -1; }
 }
 
 @media (max-width: 1180px) and (min-width: 769px) {
@@ -774,8 +798,72 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
   .modal-actions button { width: 100%; }
   .music-widget { left: 12px; bottom: 12px; width: calc(100vw - 24px); max-width: 380px; z-index: 90; }
   .theme-dev-switcher { bottom: 74px; right: 12px; transform: scale(0.9); transform-origin: bottom right; z-index: 100; }
-  .map-shell { height: 50vh; }
   .cork-board { min-height: 480px; }
+
+  /* the map's viewBox is ~2:1, so a tall box was mostly empty letterbox */
+  .map-shell { height: clamp(240px, 75vw, 60vh); }
+  /* right gap leaves the zoom buttons uncovered */
+  .map-card { left: 12px; right: 60px; bottom: 12px; min-width: 0; }
+
+  /* topbar dropdowns: anchor to the full-width bar, not their small button,
+     so they can't run off the left edge of the screen */
+  .theme-settings-wrap, .avatar-wrap { position: static; }
+  /* near-opaque: backdrop-filter can't blur through the topbar's own
+     backdrop-filter, so the glass look let page text bleed through */
+  .theme-settings-menu, .avatar-menu { left: 0; right: 0; width: auto; top: calc(100% + 8px); max-height: calc(100dvh - 120px); overflow-y: auto; background: rgba(12,10,9,0.97); }
+
+  /* compact stat row: label on top, all four pills on one line */
+  .stat-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  /* rows holding actions (board/map buttons) don't fit half-width — give
+     each side its own centered full row */
+  .stat-row:has(button) .stat-row-side { grid-column: 1 / -1; justify-content: center; flex-wrap: wrap; }
+  .stat-row:has(button) .stat-pill { flex: 0 1 auto; padding: 8px 16px; }
+  /* "Board style" is now the left button of a centered pair — open its
+     menu rightward so it can't run off the left edge */
+  .board-style-menu { left: 0; right: auto; }
+  .stat-row .eyebrow { order: -1; grid-column: 1 / -1; justify-self: center; }
+  .stat-row-side { gap: 8px; }
+  .stat-row-side:empty { display: none; }
+  .stat-row:has(> .stat-row-side:empty) .stat-row-side { grid-column: 1 / -1; }
+  .stat-pill { flex: 1; min-width: 0; padding: 8px 4px; font-size: 10px; text-align: center; }
+  .stat-pill b { font-size: 15px; }
+
+  /* heatmap: fit the card as a 3-column grid of months instead of forcing a
+     620px strip that has to be scrolled sideways */
+  .hero-wrap .hero { min-height: 0; padding-bottom: 18px; }
+  .heat-card { padding: 14px; border-radius: 18px; }
+  .year-heatmap { min-width: 0; display: grid; grid-template-columns: repeat(3, max-content); justify-content: space-between; gap: 12px 8px; }
+  .year-heatmap .legend { grid-column: 1 / -1; }
+  /* large phones / small tablets: 3 columns leaves huge gaps — use 6 */
+  @media (min-width: 521px) { .year-heatmap { grid-template-columns: repeat(6, max-content); } }
+  .month-grid { grid-template-columns: repeat(6, 10px); grid-template-rows: repeat(7, 10px); gap: 2px; }
+  .heat-cell { width: 10px; height: 10px; border-radius: 3px; }
+
+  .composer { padding: 20px 16px; border-radius: 24px; }
+  .composer-saved { right: 16px; top: 18px; }
+  .panel { padding: 20px 16px; border-radius: 24px; }
+
+  /* smaller notes/polaroids so a phone-width board holds more than two */
+  .board-pin.text { width: 132px; min-height: 104px; padding: 20px 12px 12px; font-size: 12px; }
+  .board-pin.text strong { font-size: 13px; }
+  .board-pin.image { width: 116px; padding: 8px 8px 26px; }
+  .board-pin-photo { height: 100px; }
+
+  .modal-backdrop { padding: 12px; }
+
+  /* request rows (name + Accept + Decline) are wider than a phone — let
+     the buttons drop under the name instead of overflowing */
+  .friend-row { flex-wrap: wrap; }
+  .friend-row-actions { margin-left: auto; }
+
+  /* iOS Safari zooms the page into any focused field under 16px */
+  input:not([type="color"]):not([type="checkbox"]):not([type="file"]), textarea, select { font-size: 16px !important; }
+}
+
+/* touch screens: :hover sticks after a tap, leaving buttons lit up orange */
+@media (hover: none) {
+  .topbar-icon:hover, .avatar-menu button:hover, .soft-button:not(.selected):hover { background: rgba(255,255,255,0.05); color: var(--white); border-color: var(--panel-border); }
+  .topbar-icon:active, .avatar-menu button:active, .soft-button:active { background: var(--orange); color: var(--black); border-color: var(--orange); }
 }
 
 @media (max-width: 480px) {
@@ -783,7 +871,8 @@ input[type="file"] { border: 1px dashed var(--panel-border); background: rgba(25
   .topbar-mark b { display: none; }
   .topbar-status { display: none; }
   .topbar-right { gap: 6px; }
-  .stat-chips { grid-template-columns: 1fr; }
+  .stat-chips { gap: 6px; }
+  .stat-chips span { padding: 8px 12px; }
   .section-heading { flex-wrap: wrap; gap: 8px; }
   .modal-score-row { flex-direction: column; align-items: flex-start; gap: 10px; }
   .score-orb { width: 56px; height: 56px; font-size: 24px; }

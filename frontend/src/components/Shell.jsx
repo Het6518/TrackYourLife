@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Bell, Camera, Compass, Home, LogOut, MapPin, Menu, Pin, Settings, Trash2, UserCog, Users, X } from "lucide-react";
 import { authApi } from "../api/client";
+import { prepareImage } from "../utils/image";
 import AccountSettings from "./AccountSettings";
 import Avatar from "./Avatar";
 import StarMark from "./StarMark";
@@ -14,17 +15,23 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   async function upload(event) {
     const file = event.target.files[0];
     event.target.value = "";
     if (!file) return;
     setError("");
+    setUploading(true);
     try {
-      onUserChange(await authApi.uploadAvatar(file, token));
+      // the avatar never shows bigger than ~420px, so 1024 is plenty
+      const prepared = await prepareImage(file, { maxSize: 1024 });
+      onUserChange(await authApi.uploadAvatar(prepared, token));
       setMenuOpen(false);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -83,7 +90,7 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
               <div className="avatar-menu">
                 <strong>{user.username}</strong>
                 <input ref={fileInput} type="file" accept="image/*" hidden onChange={upload} />
-                <button onClick={() => fileInput.current.click()}><Camera size={15} /> Upload photo</button>
+                <button onClick={() => fileInput.current.click()} disabled={uploading}><Camera size={15} /> {uploading ? "Uploading…" : "Upload photo"}</button>
                 {user.avatar_url && <button onClick={removeAvatar}><Trash2 size={15} /> Remove photo</button>}
                 <button onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}><Settings size={15} /> Account settings</button>
                 <button onClick={onLogout}><LogOut size={15} /> Logout</button>
