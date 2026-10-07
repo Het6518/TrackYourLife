@@ -11,10 +11,12 @@ from .serializers import (
     BoardStyleSerializer,
     LocationSerializer,
     LoginSerializer,
+    PasswordChangeSerializer,
     RegisterSerializer,
     ThemeAccentSerializer,
     ThemeBackgroundSerializer,
     ThemeEffectSerializer,
+    UsernameSerializer,
     UserSerializer,
 )
 
@@ -57,6 +59,36 @@ class LogoutView(APIView):
     def post(self, request):
         request.user.auth_token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UsernameView(APIView):
+    """Renames the logged-in user. Profile URLs are /<username>, so old links
+    stop working — friendships and entries follow the user, not the name."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        serializer = UsernameSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        request.user.username = serializer.validated_data["username"]
+        request.user.save(update_fields=["username"])
+        return Response(UserSerializer(request.user, context={"request": request}).data)
+
+
+class PasswordView(APIView):
+    """Changes the password after checking the current one, then rotates the
+    auth token so any other logged-in devices are signed out."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        request.user.set_password(serializer.validated_data["new_password"])
+        request.user.save(update_fields=["password"])
+        Token.objects.filter(user=request.user).delete()
+        token = Token.objects.create(user=request.user)
+        return Response({"token": token.key})
 
 
 class AvatarView(APIView):

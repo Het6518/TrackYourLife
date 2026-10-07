@@ -7,10 +7,12 @@ from .views import (
     LoginView,
     LogoutView,
     MeView,
+    PasswordView,
     RegisterView,
     ThemeAccentView,
     ThemeBackgroundView,
     ThemeEffectView,
+    UsernameView,
 )
 
 urlpatterns = [
@@ -18,6 +20,8 @@ urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("me/", MeView.as_view(), name="me"),
+    path("me/username/", UsernameView.as_view(), name="username"),
+    path("me/password/", PasswordView.as_view(), name="password"),
     path("me/avatar/", AvatarView.as_view(), name="avatar"),
     path("me/location/", LocationView.as_view(), name="location"),
     path("me/board-style/", BoardStyleView.as_view(), name="board-style"),

@@ -1,15 +1,17 @@
 import { useRef, useState } from "react";
-import { Bell, Camera, Compass, Home, LogOut, MapPin, Menu, Pin, Trash2, UserCog, Users, X } from "lucide-react";
+import { Bell, Camera, Compass, Home, LogOut, MapPin, Menu, Pin, Settings, Trash2, UserCog, Users, X } from "lucide-react";
 import { authApi } from "../api/client";
+import AccountSettings from "./AccountSettings";
 import Avatar from "./Avatar";
 import StarMark from "./StarMark";
 import ThemeSettings from "./ThemeSettings";
 
 // Top bar layout mirrors the reference dashboard: small mark far left,
 // section tabs centered, status + notification + avatar far right.
-export default function Shell({ active, user, token, navigate, onLogout, onUserChange, theme, children }) {
+export default function Shell({ active, user, token, navigate, onLogout, onUserChange, onTokenChange, theme, children }) {
   const fileInput = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [error, setError] = useState("");
 
@@ -83,6 +85,7 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
                 <input ref={fileInput} type="file" accept="image/*" hidden onChange={upload} />
                 <button onClick={() => fileInput.current.click()}><Camera size={15} /> Upload photo</button>
                 {user.avatar_url && <button onClick={removeAvatar}><Trash2 size={15} /> Remove photo</button>}
+                <button onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}><Settings size={15} /> Account settings</button>
                 <button onClick={onLogout}><LogOut size={15} /> Logout</button>
                 {error && <span className="avatar-error">{error}</span>}
               </div>
@@ -101,6 +104,17 @@ export default function Shell({ active, user, token, navigate, onLogout, onUserC
       </header>
 
       <main className="stage">{children}</main>
+
+      {settingsOpen && (
+        <AccountSettings
+          user={user}
+          token={token}
+          onUserChange={onUserChange}
+          onTokenChange={onTokenChange}
+          navigate={navigate}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   );
 }

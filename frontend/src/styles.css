@@ -413,6 +413,12 @@ input:focus, textarea:focus { border-color: var(--orange); box-shadow: 0 0 0 3px
 .field-label { margin: 0 0 6px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .note-detail { line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; color: rgba(245,239,232,0.85); }
 .modal-actions { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--panel-border); margin-top: 22px; padding-top: 16px; }
+.account-settings .modal-top { margin-bottom: 20px; }
+.account-settings-form { display: grid; gap: 12px; justify-items: start; }
+.account-settings-form label { width: 100%; }
+.account-settings-form .theme-settings-hint { margin: 0; }
+.account-settings-form + .account-settings-form { border-top: 1px solid var(--panel-border); margin-top: 22px; padding-top: 22px; }
+.success { margin: 0; color: #8fe3a7; font-size: 14px; font-weight: 500; }
 
 /* auth */
 .auth-frame { display: grid; place-items: center; min-height: calc(100vh - 32px); }
