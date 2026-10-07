@@ -487,9 +487,44 @@ input:focus, textarea:focus { border-color: var(--orange); box-shadow: 0 0 0 3px
     inset 0 0 90px rgba(0,0,0,0.4),
     0 30px 70px rgba(0,0,0,0.45);
 }
-.board-empty { position: absolute; inset: 0; display: grid; place-items: center; justify-items: center; gap: 12px; text-align: center; max-width: 300px; margin: 0 auto; color: rgba(255,255,255,0.8); }
+.board-empty { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; justify-items: center; gap: 12px; text-align: center; max-width: 300px; margin: 0 auto; color: rgba(255,255,255,0.8); }
 .board-empty svg { width: 48px; height: 48px; padding: 12px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px dashed rgba(255,255,255,0.3); }
 .board-empty p { margin: 0; font-size: 14px; line-height: 1.5; }
+
+/* board + achieved-goals history side by side; the board keeps most of the
+   width, history is a fixed-height column that scrolls on its own */
+.board-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.board-completed { display: flex; flex-direction: column; height: min(680px, 78vh); border-radius: 18px; background: var(--panel-strong); backdrop-filter: blur(14px); border: 1px solid var(--panel-border); padding: 16px; color: var(--white); }
+.board-completed-head { display: grid; gap: 8px; margin-bottom: 12px; }
+.board-completed-head .eyebrow { justify-self: start; margin: 0 0 2px; }
+.board-completed-head .search-bar { height: 40px; padding: 0 14px; }
+.board-completed-month { width: 100%; height: 40px; border: 1px solid var(--panel-border); border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--white); padding: 0 14px; font-size: 13px; }
+.board-completed-month option { color: #1b1b1b; }
+.board-completed > .empty-state { margin: 4px 0; font-size: 13px; line-height: 1.5; }
+.board-completed-list { list-style: none; margin: 0; padding: 0 4px 0 0; overflow-y: auto; flex: 1; min-height: 0; }
+.board-completed-list li { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--panel-border); }
+.board-completed-list li:first-child { border-top: none; padding-top: 0; }
+.board-completed-item { cursor: pointer; margin: 0 -8px; padding-left: 8px !important; padding-right: 8px !important; border-radius: 12px; transition: background 140ms ease; }
+.board-completed-item:hover, .board-completed-item:focus-visible { background: rgba(255,255,255,0.06); outline: none; }
+.board-completed-list li.board-completed-item:first-child { padding-top: 12px; }
+
+/* edit modal for an achieved goal */
+.board-edit-photo { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; }
+.board-edit-check { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.board-edit-check input { width: 18px; height: 18px; padding: 0; accent-color: var(--orange); }
+.board-edit-dates { margin: -6px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.board-edit-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.board-completed-title { display: flex; align-items: center; gap: 10px; }
+.board-completed-title strong { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board-completed-check { display: grid; place-items: center; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.12); }
+.board-completed-delete { display: grid; place-items: center; flex-shrink: 0; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.board-completed-delete:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+.board-completed-dates { display: flex; flex-direction: column; gap: 2px; padding-left: 32px; font-size: 12px; color: var(--muted); }
+.board-completed-tag { align-self: flex-start; margin-top: 4px; border-radius: 999px; border: 1px solid var(--panel-border); padding: 1px 8px; font-size: 11px; }
+@media (max-width: 1000px) {
+  .board-layout { grid-template-columns: 1fr; }
+  .board-completed { height: auto; max-height: 520px; }
+}
 
 /* paper/photo pins */
 .board-pin {
@@ -531,7 +566,6 @@ input:focus, textarea:focus { border-color: var(--orange); box-shadow: 0 0 0 3px
 @media (hover: none) { .board-pin-remove { opacity: 1; transform: scale(1); } }
 
 .board-pin.text {
-  position: relative;
   width: 172px;
   min-height: 132px;
   padding: 24px 16px 16px;

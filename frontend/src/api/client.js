@@ -80,6 +80,8 @@ export const musicApi = {
 
 export const boardApi = {
   list: (token) => request("/goals/", {}, token),
+  // every completed pin, including ones since removed from the board
+  history: (token) => request("/goals/history/", {}, token),
   create: (payload, token) => {
     const body = new FormData();
     Object.entries(payload).forEach(([key, value]) => {

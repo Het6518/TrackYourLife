@@ -23,6 +23,12 @@ class GoalPin(models.Model):
     image = models.ImageField(upload_to="vision_board/", blank=True)
     color = models.CharField(max_length=20, choices=PAPER_COLORS, default="cream")
     done = models.BooleanField(default=False)
+    # set when the pin is marked done, cleared when un-marked — kept separate
+    # from updated_at, which also moves on every drag
+    completed_at = models.DateTimeField(null=True, blank=True)
+    # a completed pin removed from the board is archived rather than deleted,
+    # so it stays in the user's achievement history
+    archived = models.BooleanField(default=False)
 
     # position as a percentage of the board (0-100), so it stays correctly
     # placed at any board size/viewport

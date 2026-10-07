@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import GoalPin
@@ -12,9 +13,32 @@ class GoalPinSerializer(serializers.ModelSerializer):
         model = GoalPin
         fields = [
             "id", "kind", "title", "body", "image", "image_url", "color", "done",
-            "x", "y", "rotation", "z_index", "created_at", "updated_at",
+            "x", "y", "rotation", "z_index", "created_at", "updated_at", "completed_at", "archived",
         ]
+        read_only_fields = ["completed_at"]
         extra_kwargs = {"image": {"write_only": True, "required": False}}
+
+    def create(self, validated_data):
+        if validated_data.get("done"):
+            validated_data["completed_at"] = timezone.now()
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        done = validated_data.get("done")
+        if done is not None and done != instance.done:
+            validated_data["completed_at"] = timezone.now() if done else None
+        # an archived pin that's no longer achieved would be in neither the
+        # board nor the history, so un-achieving it puts it back on the board
+        if done is False:
+            validated_data["archived"] = False
+        return super().update(instance, validated_data)
+
+    def validate_archived(self, archived):
+        # archiving happens through DELETE (see GoalPinViewSet); the API only
+        # lets a pin be put back on the board
+        if archived and not (self.instance and self.instance.archived):
+            raise serializers.ValidationError("Remove the pin from the board to archive it.")
+        return archived
 
     def get_image_url(self, pin):
         request = self.context.get("request")
