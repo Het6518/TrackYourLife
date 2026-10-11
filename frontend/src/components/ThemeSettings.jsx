@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Check, Palette, RotateCcw, Upload } from "lucide-react";
 import { authApi } from "../api/client";
+import { prepareImage } from "../utils/image";
 
 const ACCENT_PRESETS = ["#ff6a3d", "#5ec2ff", "#4fd1c5", "#ff8fc0", "#a3e635", "#f5c542"];
 
@@ -30,7 +31,9 @@ export default function ThemeSettings({ user, token, onUserChange }) {
     setError("");
     setBusy(true);
     try {
-      onUserChange(await authApi.uploadThemeBackground(file, token));
+      // full-screen backdrop, shown dimmed — 2560px covers large monitors
+      const prepared = await prepareImage(file, { maxSize: 2560, quality: 0.82 });
+      onUserChange(await authApi.uploadThemeBackground(prepared, token));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -98,7 +101,7 @@ export default function ThemeSettings({ user, token, onUserChange }) {
             <p className="theme-settings-hint">Upload your own photo to override the effect backdrop.</p>
             <div className="theme-settings-row">
               <button type="button" className="soft-button" onClick={() => fileRef.current?.click()} disabled={busy}>
-                <Upload size={14} /> {user.theme_background_url ? "Replace" : "Upload"} photo
+                <Upload size={14} /> {busy ? "Uploading…" : `${user.theme_background_url ? "Replace" : "Upload"} photo`}
               </button>
               {user.theme_background_url && (
                 <button type="button" className="soft-button" onClick={removeBackground}>

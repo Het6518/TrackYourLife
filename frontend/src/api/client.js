@@ -33,6 +33,14 @@ export const authApi = {
   login: (payload) => request("/auth/login/", { method: "POST", body: JSON.stringify(payload) }),
   me: (token) => request("/auth/me/", {}, token),
   logout: (token) => request("/auth/logout/", { method: "POST" }, token),
+  updateUsername: (username, token) =>
+    request("/auth/me/username/", { method: "PUT", body: JSON.stringify({ username }) }, token),
+  // returns { token } — the old one is revoked, so callers must swap it in
+  changePassword: (currentPassword, newPassword, token) =>
+    request("/auth/me/password/", {
+      method: "PUT",
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    }, token),
   uploadAvatar: (file, token) => {
     const body = new FormData();
     body.append("avatar", file);
@@ -80,6 +88,8 @@ export const musicApi = {
 
 export const boardApi = {
   list: (token) => request("/goals/", {}, token),
+  // every completed pin, including ones since removed from the board
+  history: (token) => request("/goals/history/", {}, token),
   create: (payload, token) => {
     const body = new FormData();
     Object.entries(payload).forEach(([key, value]) => {

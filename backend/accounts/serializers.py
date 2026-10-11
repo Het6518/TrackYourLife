@@ -2,6 +2,8 @@ import re
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
 from .models import (
@@ -111,6 +113,40 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+
+# top-level frontend routes — a user with one of these names would have an
+# unreachable /<username> profile page
+RESERVED_USERNAMES = {"dashboard", "explore", "map", "board", "friends"}
+
+
+class UsernameSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150, validators=[UnicodeUsernameValidator()])
+
+    def validate_username(self, value):
+        value = value.strip()
+        if value.lower() in RESERVED_USERNAMES:
+            raise serializers.ValidationError("That username is reserved.")
+        user = self.context["request"].user
+        # case-insensitive so "Alice" can't sneak in next to "alice" — profile
+        # URLs are /<username>, and two lookalikes would be confusing
+        if User.objects.filter(username__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("That username is already taken.")
+        return value
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_current_password(self, value):
+        if not self.context["request"].user.check_password(value):
+            raise serializers.ValidationError("Current password is incorrect.")
+        return value
+
+    def validate_new_password(self, value):
+        validate_password(value, self.context["request"].user)
+        return value
 
 
 class LoginSerializer(serializers.Serializer):

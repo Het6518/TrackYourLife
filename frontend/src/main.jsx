@@ -107,6 +107,13 @@ function App() {
     navigate("dashboard");
   }
 
+  // after a password change the server revokes the old token and hands back
+  // a fresh one — swap it in without bouncing the user to the login page
+  function changeToken(newToken) {
+    localStorage.setItem("track_token", newToken);
+    setToken(newToken);
+  }
+
   async function logout() { // async because until logout is complete we don't want to remove the token from local storage and set the user to null
     await authApi.logout(token).catch(() => null);
     localStorage.removeItem("track_token");
@@ -127,13 +134,13 @@ function App() {
   const baseOverlays = <WeatherFX mode={theme.fx} />;
   if (!token || !user) return <><div className={stageClass}><AuthPage onAuth={onAuth} /></div>{baseOverlays}</>;
   const overlays = <>{baseOverlays}<MusicPlayer token={token} /></>;
-  const shell = { user, token, onLogout: logout, onUserChange: setUser, theme, shareLocation };
+  const shell = { user, token, onLogout: logout, onUserChange: setUser, onTokenChange: changeToken, theme, shareLocation };
   if (route.page === "explore") return <><div className={stageClass}><ExplorePage navigate={navigate} {...shell} /></div>{overlays}</>;
   if (route.page === "map") return <><div className={stageClass}><MapPage navigate={navigate} {...shell} /></div>{overlays}</>;
   if (route.page === "board") return <><div className={stageClass}><VisionBoardPage navigate={navigate} {...shell} /></div>{overlays}</>;
   if (route.page === "friends") return <><div className={stageClass}><FriendsPage navigate={navigate} {...shell} /></div>{overlays}</>;
   if (route.page === "profile") return <><div className={stageClass}><PublicProfilePage username={route.username} navigate={navigate} {...shell} /></div>{overlays}</>;
-  return <><div className={stageClass}><DashboardPage token={token} user={user} onLogout={logout} onUserChange={setUser} navigate={navigate} theme={theme} /></div>{overlays}</>;
+  return <><div className={stageClass}><DashboardPage token={token} user={user} onLogout={logout} onUserChange={setUser} onTokenChange={changeToken} navigate={navigate} theme={theme} /></div>{overlays}</>;
 }
 
 createRoot(document.getElementById("root")).render(
