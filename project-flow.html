@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrackYourLife Flow Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --panel-2: #f0f2f5; --border: #dde1e7;
+    --text: #1b1f27; --muted: #5d6675; --faint: #8a93a3; --edge: #9aa3b2; --accent: #e8590c;
+    --c-page: #7c5cff; --c-comp: #d6409f; --c-route: #1c7ed6; --c-mw: #6b7280;
+    --c-view: #e8590c; --c-model: #2f9e44; --c-infra: #e03131;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1218; --panel: #161a22; --panel-2: #1c212b; --border: #2a303c;
+      --text: #e8ebf1; --muted: #9aa3b2; --faint: #6b7385; --edge: #4b5466; --accent: #ff8a3d;
+      --c-page: #9b87ff; --c-comp: #f06fbd; --c-route: #4dabf7; --c-mw: #a0a8b6;
+      --c-view: #ff922b; --c-model: #51cf66; --c-infra: #ff6b6b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1218; --panel: #161a22; --panel-2: #1c212b; --border: #2a303c;
+    --text: #e8ebf1; --muted: #9aa3b2; --faint: #6b7385; --edge: #4b5466; --accent: #ff8a3d;
+    --c-page: #9b87ff; --c-comp: #f06fbd; --c-route: #4dabf7; --c-mw: #a0a8b6;
+    --c-view: #ff922b; --c-model: #51cf66; --c-infra: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 Inter, system-ui, sans-serif; }
+  .wrap { padding: 20px 16px 32px; max-width: 1800px; margin: 0 auto; }
+  header h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); max-width: 760px; font-size: 13px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 10px; }
+  .search { position: relative; flex: 0 1 300px; min-width: 200px; }
+  .search input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; font-size: 13px; }
+  .search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { font: inherit; font-size: 13px; cursor: pointer; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); padding: 7px 12px; }
+  button:hover { border-color: var(--faint); }
+  .journeys { display: flex; flex-wrap: wrap; gap: 6px; }
+  .journeys button { font-size: 12px; padding: 5px 10px; border-radius: 999px; background: var(--panel-2); }
+  .journeys button.on { border-color: var(--accent); color: var(--accent); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 6px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+  .board { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: auto; max-height: calc(100vh - 210px); min-height: 420px; }
+  .canvas { position: relative; }
+  svg.edges { position: absolute; inset: 0; pointer-events: none; }
+  .colhead { position: absolute; top: 12px; font: 500 10px "JetBrains Mono", monospace; letter-spacing: .14em; color: var(--faint); text-align: center; }
+  .node { position: absolute; height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--panel-2); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: opacity .15s, border-color .15s, box-shadow .15s; user-select: none; }
+  .node::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+  .node span { overflow: hidden; text-overflow: ellipsis; }
+  .node.mono span { font-family: "JetBrains Mono", monospace; font-size: 11px; }
+  .node:hover { border-color: var(--c); }
+  .node.match { box-shadow: 0 0 0 2px var(--accent); }
+  .node.sel { border-color: var(--c); box-shadow: 0 0 0 2px var(--c); }
+  .node.lit { border-color: var(--c); }
+  .dimmed .node:not(.lit):not(.sel) { opacity: .22; }
+  path.e { fill: none; stroke: var(--edge); stroke-width: 1.1; opacity: .35; transition: opacity .15s; }
+  path.e.hidden { opacity: 0; }
+  .dimmed path.e { opacity: .05; }
+  .dimmed path.e.hidden { opacity: 0; }
+  .dimmed path.e.lit { opacity: .95; stroke-width: 1.8; stroke: var(--c); }
+  aside { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
+  aside h2 { margin: 0 0 4px; font-size: 16px; }
+  aside .kind { display: inline-block; font: 500 10px "JetBrains Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--c); margin-bottom: 6px; }
+  aside .file { font: 11px "JetBrains Mono", monospace; color: var(--muted); word-break: break-all; margin-bottom: 10px; }
+  aside p { margin: 0 0 12px; font-size: 13px; color: var(--text); }
+  aside h3 { margin: 14px 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+  aside ul, aside ol { margin: 0; padding: 0; list-style: none; }
+  aside li { font-size: 12.5px; padding: 5px 0; border-top: 1px solid var(--border); }
+  aside li:first-child { border-top: 0; }
+  aside a { color: var(--text); text-decoration: none; font-weight: 500; cursor: pointer; border-bottom: 1px dashed var(--faint); }
+  aside a:hover { color: var(--accent); border-color: var(--accent); }
+  aside .lbl { color: var(--muted); font-size: 11.5px; display: block; }
+  aside ol li { counter-increment: step; display: grid; grid-template-columns: 22px 1fr; gap: 6px; }
+  aside ol li::before { content: counter(step); font: 600 11px "JetBrains Mono", monospace; color: var(--accent); padding-top: 1px; }
+  aside ol { counter-reset: step; }
+  .hint { color: var(--muted); font-size: 13px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+  .stats div { background: var(--panel-2); border-radius: 8px; padding: 8px; text-align: center; }
+  .stats b { display: block; font-size: 18px; }
+  .stats small { color: var(--muted); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>TrackYourLife Flow Map</h1>
+    <p>Every page, API call, Django route, auth/parser layer, view, model and external service in the app. Columns run left → right in call order. Click any node to trace everything upstream and downstream of it, or pick a user journey to walk a flow step by step.</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="search"><input id="q" type="search" placeholder="Jump to DayViewSet, /songs/, Profile…" autocomplete="off"></div>
+    <button id="clear">Clear selection</button>
+    <button id="themeBtn" title="Toggle light / dark">◐ Theme</button>
+  </div>
+  <div class="journeys" id="journeys"></div>
+  <div class="legend" id="legend" style="margin-top:12px"></div>
+
+  <div class="layout">
+    <div class="board" id="board"><div class="canvas" id="canvas"><svg class="edges" id="svg"></svg></div></div>
+    <aside id="panel"></aside>
+  </div>
+</div>
+
+<script>
+const KINDS = {
+  page:  { label: "Page / App",           c: "--c-page"  },
+  comp:  { label: "Component",            c: "--c-comp"  },
+  route: { label: "HTTP Route (/api)",    c: "--c-route" },
+  mw:    { label: "Auth / Middleware",    c: "--c-mw"    },
+  view:  { label: "DRF View",             c: "--c-view"  },
+  model: { label: "Model (PostgreSQL)",   c: "--c-model" },
+  infra: { label: "Infra / External",     c: "--c-infra" },
+};
+const COLS = [
+  { key: "page",  title: "PAGES" },
+  { key: "comp",  title: "COMPONENTS" },
+  { key: "route", title: "HTTP ROUTES" },
+  { key: "mw",    title: "AUTH / MIDDLEWARE" },
+  { key: "view",  title: "VIEWS" },
+  { key: "model", title: "MODELS" },
+  { key: "infra", title: "INFRA / EXTERNAL" },
+];
+
+const FE = "frontend/src/";
+const N = [
+  // ---------- pages
+  ["app", "page", "main.jsx · App router", FE + "main.jsx", "Root of the SPA. A tiny path router (parseLocation + history.pushState) picks the page. Holds the auth token in localStorage, validates it on load with GET /auth/me/, applies the user's theme effect + personal overrides, and mounts WeatherFX and the MusicPlayer once signed in."],
+  ["auth", "page", "AuthPage.jsx", FE + "pages/AuthPage.jsx", "Login / register form. On success hands { token, user } up to App.onAuth, which persists the token and navigates to the dashboard."],
+  ["dash", "page", "DashboardPage.jsx", FE + "pages/DashboardPage.jsx", "The core Daymap. Loads your days, lets you create/edit/delete one entry per date (score 1–10, note, visibility), renders heatmap, trends, streak cards and exports CSV. Also pulls public users for the Inspire card."],
+  ["explore", "page", "ExplorePage.jsx  /explore", FE + "pages/ExplorePage.jsx", "Lists every user with at least one public day, then fetches each user's visible days to show score summaries."],
+  ["map", "page", "MapPage.jsx  /map", FE + "pages/MapPage.jsx", "Offline world map drawn with d3-geo from a bundled TopoJSON. Pins public users at their stored coordinates. Opt-in 'Share my location' asks the browser once and saves via PUT /auth/me/location/."],
+  ["friends", "page", "FriendsPage.jsx  /friends", FE + "pages/FriendsPage.jsx", "Friends list, incoming/outgoing requests, username search, send / accept / decline / unfriend."],
+  ["profile", "page", "PublicProfilePage.jsx  /:user", FE + "pages/PublicProfilePage.jsx", "Another user's heatmap and entries. The backend decides which visibilities you can see (public, + friends if you're friends, everything if it's you). Also shows your relationship and a friend button."],
+  ["board", "page", "VisionBoardPage.jsx  /board", FE + "pages/VisionBoardPage.jsx", "Drag-and-drop corkboard of goal pins (sticky notes or photos). Dragging sends frequent JSON PATCHes for x / y / rotation / z_index; board colour is saved on the profile."],
+  // ---------- components
+  ["shell", "comp", "Shell.jsx (top bar)", FE + "components/Shell.jsx", "Shared navigation bar on every signed-in page: nav links, avatar upload/remove, logout, and the ThemeSettings popover."],
+  ["theme", "comp", "ThemeSettings.jsx", FE + "components/ThemeSettings.jsx", "Pick a background effect (None / Winter / Summer / Rain / Cherry Blossom), upload a custom background photo, or set an accent colour. Each saves to the Profile and returns the updated user."],
+  ["avatar", "comp", "Avatar.jsx", FE + "components/Avatar.jsx", "Renders a user's avatar image (or initials). With Cloudinary proxying on, the image URL points at /api/media/… on the backend."],
+  ["music", "comp", "MusicPlayer.jsx", FE + "components/MusicPlayer.jsx", "Floating mini player with two sources: your uploaded library (/api/songs/, played via <audio>) and YouTube search + IFrame playback."],
+  ["fx", "comp", "WeatherFX.jsx", FE + "components/WeatherFX.jsx", "Canvas 2D particle overlay (snow, sun motes, rain, petals) chosen by theme.fx from utils/weather.js. Purely client side."],
+  ["charts", "comp", "Heatmap · Trends · Cards", FE + "components/", "YearHeatmap, Trends, Sparkline, Gauge, Momentum/Solar/MineralRatio cards, EntryStack, DayComposer, DayModal. Pure presentation over the days array — no network calls."],
+  ["client", "comp", "api/client.js · request()", FE + "api/client.js", "Single fetch wrapper used by every HTTP call. Prefixes VITE_API_URL, adds 'Authorization: Token <token>', sets JSON content type (unless FormData), returns null on 204 and turns DRF error bodies into Error messages. Exposes authApi, daysApi, musicApi, boardApi, friendsApi.", { global: true }],
+  // ---------- routes
+  ["r_register", "route", "POST /auth/register/", "backend/accounts/urls.py", "Create an account. Returns { token, user } with 201."],
+  ["r_login", "route", "POST /auth/login/", "backend/accounts/urls.py", "Username + password → { token, user }."],
+  ["r_logout", "route", "POST /auth/logout/", "backend/accounts/urls.py", "Deletes the caller's token (204)."],
+  ["r_me", "route", "GET /auth/me/", "backend/accounts/urls.py", "Current user incl. avatar_url, location, board background and theme fields."],
+  ["r_avatar", "route", "POST·DELETE /auth/me/avatar/", "backend/accounts/urls.py", "Multipart avatar upload, or remove it."],
+  ["r_location", "route", "PUT /auth/me/location/", "backend/accounts/urls.py", "Save latitude / longitude from the browser's Geolocation API."],
+  ["r_boardstyle", "route", "PUT /auth/me/board-style/", "backend/accounts/urls.py", "Vision board background: 'transparent' or #rrggbb."],
+  ["r_themebg", "route", "POST·DELETE /auth/me/theme-background/", "backend/accounts/urls.py", "Upload / remove the app-wide custom background photo."],
+  ["r_accent", "route", "PUT /auth/me/theme-accent/", "backend/accounts/urls.py", "Accent colour override (#rrggbb or blank)."],
+  ["r_effect", "route", "PUT /auth/me/theme-effect/", "backend/accounts/urls.py", "Background effect: '', winter, summer, rain, blossom."],
+  ["r_days", "route", "GET·POST /days/", "backend/days/urls.py", "List your days / create one. DRF router on DayViewSet."],
+  ["r_day", "route", "PUT·DELETE /days/{id}/", "backend/days/urls.py", "Update or delete one of your days."],
+  ["r_pubusers", "route", "GET /public/users/", "backend/days/urls.py", "Users with ≥1 public day, with avatar_url and location. No auth required."],
+  ["r_pubdays", "route", "GET /public/users/{u}/days/", "backend/days/urls.py", "A user's days filtered by what the viewer may see. Token is optional — sending it can unlock friends-only entries."],
+  ["r_friends", "route", "GET /friends/", "backend/friends/urls.py", "Your accepted friends."],
+  ["r_requests", "route", "GET·POST /friends/requests/", "backend/friends/urls.py", "GET: incoming + outgoing pending requests. POST {username}: send a request (auto-accepts if they already asked you)."],
+  ["r_respond", "route", "POST /friends/requests/{id}/{action}/", "backend/friends/urls.py", "action = accept | decline on a request sent to you."],
+  ["r_search", "route", "GET /friends/search/?q=", "backend/friends/urls.py", "Username search (≥2 chars, max 20) tagged with your relationship to each result."],
+  ["r_unfriend", "route", "DELETE /friends/{username}/", "backend/friends/urls.py", "Remove an accepted friendship."],
+  ["r_songs", "route", "GET·POST /songs/", "backend/music/urls.py", "List / upload songs in your personal library (multipart)."],
+  ["r_song", "route", "DELETE /songs/{id}/", "backend/music/urls.py", "Delete one of your songs."],
+  ["r_goals", "route", "GET·POST /goals/", "backend/visionboard/urls.py", "List / create vision board pins (multipart, may include an image)."],
+  ["r_goal", "route", "PATCH·DELETE /goals/{id}/", "backend/visionboard/urls.py", "Move / rotate / restack / mark done (JSON PATCH) or delete a pin."],
+  ["r_media", "route", "GET /media/{type}/{public_id}", "backend/config/urls.py", "Only registered when Cloudinary is enabled. Streams uploaded images/audio from Cloudinary through the backend for networks that block *.cloudinary.com."],
+  // ---------- middleware / auth
+  ["cors", "mw", "CorsMiddleware", "backend/config/settings.py", "django-cors-headers. Runs on every request; allows the Vite dev origin (localhost:5173) or DJANGO_CORS_ORIGINS in production. Sits alongside SecurityMiddleware, WhiteNoise, CSRF, etc."],
+  ["token", "mw", "TokenAuthentication", "backend/config/settings.py", "DRF default authenticator. Resolves 'Authorization: Token <key>' to request.user via the authtoken Token table."],
+  ["isauth", "mw", "IsAuthenticated", "backend/config/settings.py", "DRF default permission. Rejects anonymous requests with 401 on every view that doesn't override it."],
+  ["allowany", "mw", "AllowAny", "backend/accounts/views.py", "Overrides the default on register, login and the two public endpoints so they work signed out."],
+  ["multipart", "mw", "MultiPart / Form parsers", "backend/*/views.py", "Enables file uploads (avatar, theme background, songs, pin images). GoalPinViewSet also keeps JSONParser for drag PATCHes."],
+  ["safe", "mw", "@require_safe", "backend/config/cloudinary_media.py", "Media proxy only answers GET / HEAD, and only for this app's own public ids (prefix check, no '..')."],
+  // ---------- views
+  ["v_register", "view", "RegisterView", "backend/accounts/views.py", "Validates RegisterSerializer (password ≥ 8), creates the User and a Token."],
+  ["v_login", "view", "LoginView", "backend/accounts/views.py", "LoginSerializer → django authenticate(); get_or_create Token."],
+  ["v_logout", "view", "LogoutView", "backend/accounts/views.py", "request.user.auth_token.delete()."],
+  ["v_me", "view", "MeView", "backend/accounts/views.py", "Serializes request.user with UserSerializer (pulls Profile fields)."],
+  ["v_avatar", "view", "AvatarView", "backend/accounts/views.py", "Replaces / deletes Profile.avatar (old file deleted from storage first)."],
+  ["v_location", "view", "LocationView", "backend/accounts/views.py", "Writes Profile.latitude / longitude / location_updated_at."],
+  ["v_boardstyle", "view", "BoardStyleView", "backend/accounts/views.py", "Writes Profile.board_background."],
+  ["v_themebg", "view", "ThemeBackgroundView", "backend/accounts/views.py", "Replaces / deletes Profile.theme_background image."],
+  ["v_accent", "view", "ThemeAccentView", "backend/accounts/views.py", "Writes Profile.theme_accent_color."],
+  ["v_effect", "view", "ThemeEffectView", "backend/accounts/views.py", "Writes Profile.theme_effect."],
+  ["v_days", "view", "DayViewSet", "backend/days/views.py", "ModelViewSet scoped to Day.objects.filter(user=request.user); perform_create stamps the user."],
+  ["v_pubusers", "view", "public_users()", "backend/days/views.py", "Distinct users with a public day + avatar_url_for() and location_for()."],
+  ["v_pubdays", "view", "public_user_days()", "backend/days/views.py", "Self → all; friends (are_friends) → friends + public; anyone else → public only."],
+  ["v_friends", "view", "FriendsListView", "backend/friends/views.py", "friends_of(request.user) → PublicUserSerializer."],
+  ["v_requests", "view", "FriendRequestsView", "backend/friends/views.py", "Lists pending requests; POST validates target, dedupes, and accepts a mirrored pending request instead of duplicating."],
+  ["v_respond", "view", "RespondFriendRequestView", "backend/friends/views.py", "accept → status accepted + responded_at; decline → delete the row."],
+  ["v_unfriend", "view", "RemoveFriendView", "backend/friends/views.py", "Deletes the accepted Friendship between you and {username}."],
+  ["v_search", "view", "SearchUsersView", "backend/friends/views.py", "icontains username search, tags none / friends / pending_outgoing / pending_incoming."],
+  ["v_songs", "view", "SongViewSet", "backend/music/views.py", "Per-user song library; storage failures become a 400 with a readable message instead of a 500."],
+  ["v_goals", "view", "GoalPinViewSet", "backend/visionboard/views.py", "Per-user pin CRUD with multipart + JSON parsers."],
+  ["v_media", "view", "media_proxy()", "backend/config/cloudinary_media.py", "Fetches the asset from Cloudinary with a keep-alive session, forwards Range headers (audio seeking), streams 64 KB chunks back and caches for a week."],
+  // ---------- models
+  ["m_user", "model", "User (django.contrib.auth)", "django.contrib.auth.models", "Built-in user. Every other model hangs off it via a FK / OneToOne."],
+  ["m_token", "model", "Token (authtoken)", "rest_framework.authtoken", "One API key per user, created at register/login and deleted at logout."],
+  ["m_profile", "model", "Profile", "backend/accounts/models.py", "OneToOne with User: avatar, latitude/longitude, board_background, theme_background, theme_accent_color, theme_effect. Helpers: avatar_url_for, location_for, …"],
+  ["m_day", "model", "Day", "backend/days/models.py", "user, date, score (1–10), note, visibility (private | friends | public). UniqueConstraint(user, date) → one entry per day."],
+  ["m_friend", "model", "Friendship", "backend/friends/models.py", "from_user → to_user, status pending | accepted. Helpers are_friends(), friendship_between(), friends_of()."],
+  ["m_song", "model", "Song", "backend/music/models.py", "title, artist, audio (FileField on Cloudinary 'video' storage when enabled), cover image."],
+  ["m_goal", "model", "GoalPin", "backend/visionboard/models.py", "kind text | image, title, body, image, color, done, x / y (% of board), rotation (±25°), z_index."],
+  // ---------- infra
+  ["pg", "infra", "PostgreSQL (Neon)", "backend/config/settings.py", "DATABASE_URL via dj-database-url; persistent connections with health checks (Neon suspends idle computes). Local Docker Postgres in dev."],
+  ["cloud", "infra", "Cloudinary", "backend/config/cloudinary_media.py", "Media storage in production (images + audio as 'video' resources). Enabled when CLOUDINARY_CLOUD_NAME is set; falls back to local FileSystemStorage."],
+  ["ls", "infra", "localStorage · track_token", FE + "main.jsx", "Persists the DRF token across reloads; removed on logout or when /auth/me/ rejects it."],
+  ["geo", "infra", "Browser Geolocation API", FE + "utils/geolocation.js", "getBrowserLocation(): one-shot navigator.geolocation call, 8s timeout. Opt-in only."],
+  ["yt", "infra", "YouTube Data API v3", FE + "utils/youtube.js", "searchYouTube() hits googleapis.com/youtube/v3/search (music category) with VITE_YOUTUBE_API_KEY. Client-side only."],
+  ["ytp", "infra", "YouTube IFrame Player API", FE + "utils/youtube.js", "Loaded once via a script tag; plays the chosen video in a hidden/mini player."],
+  ["topo", "infra", "world-110m TopoJSON + d3-geo", FE + "assets/world-110m.json", "Bundled Natural Earth outlines projected with geoNaturalEarth1 — no tile server or map key."],
+  ["vercel", "infra", "Vercel (SPA + Analytics)", "frontend/vercel.json", "Hosts the Vite build; rewrites every path to index.html so the client router works. <Analytics/> is mounted in main.jsx."],
+  ["gunicorn", "infra", "Gunicorn + WhiteNoise", "backend/Procfile", "Backend process: release runs migrate, web runs gunicorn config.wsgi. WhiteNoise serves static files (admin)."],
+];
+
+const E = [
+  // app
+  ["app", "ls", "read / write track_token"], ["app", "r_me", "authApi.me — validate token"], ["app", "r_logout", "authApi.logout"],
+  ["app", "auth", "route: signed out"], ["app", "dash", "route: /dashboard"], ["app", "explore", "route: /explore"], ["app", "map", "route: /map"],
+  ["app", "friends", "route: /friends"], ["app", "profile", "route: /:username"], ["app", "board", "route: /board"],
+  ["app", "fx", "mode = theme.fx"], ["app", "music", "mounted when signed in"], ["app", "vercel", "<Analytics/>"],
+  // pages
+  ["auth", "r_register", "authApi.register"], ["auth", "r_login", "authApi.login"],
+  ["dash", "r_days", "daysApi.list / create"], ["dash", "r_day", "daysApi.update / remove"], ["dash", "r_pubusers", "daysApi.publicUsers (Inspire card)"], ["dash", "shell", "layout"], ["dash", "charts", "renders"],
+  ["explore", "r_pubusers", "daysApi.publicUsers"], ["explore", "r_pubdays", "daysApi.publicUserDays"], ["explore", "shell", "layout"], ["explore", "avatar", "renders"],
+  ["map", "r_pubusers", "pins from user.location"], ["map", "geo", "shareLocation()"], ["map", "r_location", "shareLocation → authApi.updateLocation"], ["map", "topo", "draws countries"], ["map", "shell", "layout"], ["map", "avatar", "pin markers"],
+  ["friends", "r_friends", "friendsApi.list"], ["friends", "r_requests", "friendsApi.requests / send"], ["friends", "r_respond", "friendsApi.accept / decline"], ["friends", "r_search", "friendsApi.search"], ["friends", "r_unfriend", "friendsApi.remove"], ["friends", "shell", "layout"], ["friends", "avatar", "renders"],
+  ["profile", "r_pubdays", "daysApi.publicUserDays(username, token)"], ["profile", "r_search", "relationship lookup"], ["profile", "r_requests", "friendsApi.send"], ["profile", "r_unfriend", "friendsApi.remove"], ["profile", "shell", "layout"], ["profile", "charts", "renders"], ["profile", "avatar", "renders"],
+  ["board", "r_goals", "boardApi.list / create"], ["board", "r_goal", "boardApi.update (drag) / remove"], ["board", "r_boardstyle", "authApi.updateBoardStyle"], ["board", "shell", "layout"],
+  // components
+  ["shell", "r_avatar", "authApi.uploadAvatar / removeAvatar"], ["shell", "theme", "opens"], ["shell", "avatar", "renders"],
+  ["theme", "r_themebg", "upload / removeThemeBackground"], ["theme", "r_accent", "updateThemeAccent"], ["theme", "r_effect", "updateThemeEffect"],
+  ["avatar", "r_media", "<img src> (proxied)"],
+  ["music", "r_songs", "musicApi.list / upload"], ["music", "r_song", "musicApi.remove"], ["music", "r_media", "<audio src> with Range"], ["music", "yt", "searchYouTube()"], ["music", "ytp", "loadYouTubeIframeApi()"],
+  // routes → views
+  ["r_register", "v_register"], ["r_login", "v_login"], ["r_logout", "v_logout"], ["r_me", "v_me"], ["r_avatar", "v_avatar"], ["r_location", "v_location"],
+  ["r_boardstyle", "v_boardstyle"], ["r_themebg", "v_themebg"], ["r_accent", "v_accent"], ["r_effect", "v_effect"], ["r_days", "v_days"], ["r_day", "v_days"],
+  ["r_pubusers", "v_pubusers"], ["r_pubdays", "v_pubdays"], ["r_friends", "v_friends"], ["r_requests", "v_requests"], ["r_respond", "v_respond"],
+  ["r_search", "v_search"], ["r_unfriend", "v_unfriend"], ["r_songs", "v_songs"], ["r_song", "v_songs"], ["r_goals", "v_goals"], ["r_goal", "v_goals"], ["r_media", "v_media"],
+  // routes → middleware
+  ["r_register", "allowany"], ["r_login", "allowany"], ["r_pubusers", "allowany"], ["r_pubdays", "allowany"], ["r_pubdays", "token", "optional — widens visibility"],
+  ["r_avatar", "multipart"], ["r_themebg", "multipart"], ["r_songs", "multipart"], ["r_goals", "multipart"], ["r_media", "safe"],
+  // views → models
+  ["v_register", "m_user", "create_user"], ["v_register", "m_token", "get_or_create"], ["v_login", "m_user", "authenticate"], ["v_login", "m_token", "get_or_create"],
+  ["v_logout", "m_token", "delete"], ["v_me", "m_user"], ["v_me", "m_profile", "UserSerializer"],
+  ["v_avatar", "m_profile", "avatar"], ["v_location", "m_profile", "lat / lng"], ["v_boardstyle", "m_profile", "board_background"],
+  ["v_themebg", "m_profile", "theme_background"], ["v_accent", "m_profile", "theme_accent_color"], ["v_effect", "m_profile", "theme_effect"],
+  ["v_days", "m_day", "filter(user=me)"], ["v_pubusers", "m_user", "days__visibility=public"], ["v_pubusers", "m_day"], ["v_pubusers", "m_profile", "avatar_url_for / location_for"],
+  ["v_pubdays", "m_user"], ["v_pubdays", "m_day", "visibility__in"], ["v_pubdays", "m_friend", "are_friends()"], ["v_pubdays", "m_profile", "avatar_url_for"],
+  ["v_friends", "m_friend", "friends_of()"], ["v_friends", "m_profile", "avatar"], ["v_requests", "m_friend", "create / auto-accept"], ["v_requests", "m_user"],
+  ["v_respond", "m_friend", "accept / delete"], ["v_unfriend", "m_friend", "delete"], ["v_unfriend", "m_user"],
+  ["v_search", "m_user", "username__icontains"], ["v_search", "m_friend", "friendship_between()"], ["v_search", "m_profile", "avatar_url_for"],
+  ["v_songs", "m_song"], ["v_goals", "m_goal"], ["v_media", "cloud", "stream bytes (Range passthrough)"],
+  // models → infra
+  ["m_user", "pg"], ["m_token", "pg"], ["m_profile", "pg"], ["m_day", "pg"], ["m_friend", "pg"], ["m_song", "pg"], ["m_goal", "pg"],
+  ["m_profile", "cloud", "avatar, theme_background"], ["m_song", "cloud", "audio (video resource) + cover"], ["m_goal", "cloud", "pin image"],
+];
+
+// every authenticated route runs TokenAuthentication + IsAuthenticated; every route passes CorsMiddleware
+const PUBLIC = new Set(["r_register", "r_login", "r_pubusers", "r_pubdays", "r_media"]);
+N.filter((n) => n[1] === "route").forEach(([id]) => {
+  if (!PUBLIC.has(id)) { E.push([id, "token"]); E.push([id, "isauth"]); }
+  E.push([id, "cors", "", true]);
+});
+E.push(["gunicorn", "pg", "", true]);
+
+const JOURNEYS = [
+  { name: "Sign in", steps: [
+    ["auth", "User submits username + password."], ["r_login", "authApi.login → POST /api/auth/login/ via request()."], ["allowany", "No token needed for this endpoint."],
+    ["v_login", "LoginSerializer calls Django authenticate()."], ["m_user", "Credentials checked against the User table."], ["m_token", "Token.get_or_create returns the API key."],
+    ["app", "onAuth stores the token and navigates to the dashboard."], ["ls", "track_token persisted for reloads."],
+    ["r_me", "On every reload App re-validates the token with GET /auth/me/."], ["token", "TokenAuthentication resolves request.user."], ["v_me", "Returns the user + Profile fields (theme, avatar, location)."], ["m_profile", "Profile supplies theme + avatar data."] ] },
+  { name: "Log a day", steps: [
+    ["dash", "User fills score, note and visibility in the composer."], ["r_days", "daysApi.create → POST /api/days/ (or PUT /days/{id}/ when editing)."], ["r_day", "Edits and deletes go through /days/{id}/."],
+    ["token", "Token header resolves the user."], ["isauth", "Anonymous requests are rejected."], ["v_days", "DayViewSet.perform_create stamps user=request.user."],
+    ["m_day", "UniqueConstraint(user, date) enforces one entry per day."], ["pg", "Row written to PostgreSQL."], ["charts", "Heatmap, trends and streak cards re-render from the new list."] ] },
+  { name: "View a profile", steps: [
+    ["profile", "Visit /:username."], ["r_pubdays", "GET /public/users/{u}/days/ — token sent if signed in."], ["allowany", "Works signed out too."], ["token", "If a token is present, request.user is known."],
+    ["v_pubdays", "Chooses visible statuses: self → all, friend → friends + public, else public."], ["m_friend", "are_friends() checks for an accepted Friendship."], ["m_day", "Days filtered by visibility__in."],
+    ["r_search", "Relationship lookup drives the friend button."], ["v_search", "Tags none / friends / pending."] ] },
+  { name: "Friend request", steps: [
+    ["friends", "Search for a username."], ["r_search", "GET /friends/search/?q= (≥ 2 chars)."], ["v_search", "Returns matches tagged with relationship."],
+    ["r_requests", "POST /friends/requests/ { username }."], ["v_requests", "Rejects self / duplicates; auto-accepts if they already asked you."], ["m_friend", "Friendship row created as pending."],
+    ["r_respond", "Recipient POSTs …/{id}/accept/ or …/decline/."], ["v_respond", "accept → status accepted; decline → row deleted."] ] },
+  { name: "Vision board drag", steps: [
+    ["board", "Pins load and render at x / y % positions."], ["r_goals", "GET /goals/ (POST multipart to add a note or photo)."], ["multipart", "Image pins arrive as multipart."],
+    ["r_goal", "Every drag / rotate / done toggle sends PATCH /goals/{id}/ as JSON."], ["v_goals", "GoalPinViewSet scoped to the user."], ["m_goal", "x, y, rotation, z_index validated and saved."],
+    ["cloud", "Pin images stored on Cloudinary in production."], ["r_boardstyle", "Board colour saved via PUT /auth/me/board-style/."], ["m_profile", "Profile.board_background."] ] },
+  { name: "Upload & play a song", steps: [
+    ["music", "User picks an audio file + title in the player."], ["r_songs", "POST /api/songs/ as FormData."], ["multipart", "MultiPartParser reads the file."],
+    ["v_songs", "SongViewSet saves it; storage errors become a readable 400."], ["m_song", "Song row with an audio FileField."], ["cloud", "Audio stored as a Cloudinary 'video' resource."],
+    ["r_media", "<audio> requests /api/media/video/… with Range headers."], ["safe", "GET/HEAD only, own uploads only."], ["v_media", "media_proxy streams the bytes back from Cloudinary."] ] },
+  { name: "YouTube search", steps: [
+    ["music", "User types a song name in Find a song."], ["yt", "searchYouTube() calls the Data API v3 with the browser key."], ["ytp", "IFrame Player API loads once and plays the result."] ] },
+  { name: "Personalize theme", steps: [
+    ["shell", "Open settings from the top bar."], ["theme", "Choose effect, upload a photo, or pick an accent."], ["r_effect", "PUT /auth/me/theme-effect/."], ["r_themebg", "POST /auth/me/theme-background/ (multipart)."],
+    ["r_accent", "PUT /auth/me/theme-accent/."], ["v_effect", "Writes theme_effect."], ["v_themebg", "Replaces the stored photo."], ["v_accent", "Writes theme_accent_color."], ["m_profile", "All three live on Profile."],
+    ["cloud", "Background photo stored on Cloudinary."], ["app", "applyTheme + applyPersonalization re-run on the returned user."], ["fx", "Particle mode switches to match."] ] },
+  { name: "Share location → Map", steps: [
+    ["map", "User taps 'Share my location'."], ["geo", "Browser asks for permission once."], ["r_location", "PUT /auth/me/location/ { latitude, longitude }."],
+    ["v_location", "Saves coordinates + timestamp."], ["m_profile", "Profile.latitude / longitude."], ["r_pubusers", "GET /public/users/ returns location per user."],
+    ["v_pubusers", "location_for() builds { lat, lng }."], ["topo", "Countries projected with d3-geo; avatars pinned on top."] ] },
+];
+
+// ---------- layout
+const COL_W = 236, COL_GAP = 64, ROW_H = 38, TOP = 40, LEFT = 18;
+const byId = {}; const nodes = [];
+COLS.forEach((col, ci) => {
+  N.filter((n) => n[1] === col.key).forEach((n, ri) => {
+    const node = { id: n[0], kind: n[1], label: n[2], file: n[3], desc: n[4], global: n[5]?.global, x: LEFT + ci * (COL_W + COL_GAP), y: TOP + ri * ROW_H, col: ci };
+    byId[node.id] = node; nodes.push(node);
+  });
+});
+const edges = E.map(([from, to, label = "", hidden = false]) => ({ from, to, label, hidden }));
+const out = {}, inn = {};
+edges.forEach((e) => { (out[e.from] ||= []).push(e); (inn[e.to] ||= []).push(e); });
+
+const canvas = document.getElementById("canvas"), svg = document.getElementById("svg"), board = document.getElementById("board");
+const W = LEFT * 2 + COLS.length * COL_W + (COLS.length - 1) * COL_GAP;
+const H = TOP + Math.max(...COLS.map((c) => nodes.filter((n) => n.kind === c.key).length)) * ROW_H + 20;
+canvas.style.width = W + "px"; canvas.style.height = H + "px";
+svg.setAttribute("width", W); svg.setAttribute("height", H);
+
+COLS.forEach((col, ci) => {
+  const h = document.createElement("div");
+  h.className = "colhead"; h.textContent = col.title;
+  h.style.left = LEFT + ci * (COL_W + COL_GAP) + "px"; h.style.width = COL_W + "px";
+  canvas.appendChild(h);
+});
+
+const NH = 30;
+edges.forEach((e) => {
+  const a = byId[e.from], b = byId[e.to];
+  let d;
+  if (b.col > a.col) {
+    const x1 = a.x + COL_W, y1 = a.y + NH / 2, x2 = b.x, y2 = b.y + NH / 2, dx = Math.max(40, (x2 - x1) / 2);
+    d = `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+  } else {
+    // same-column (e.g. App → page): loop out to the right
+    const x = a.x + COL_W, y1 = a.y + NH / 2, y2 = b.y + NH / 2, bulge = 18 + Math.min(40, Math.abs(y2 - y1) * 0.08);
+    d = `M${x},${y1} C${x + bulge},${y1} ${x + bulge},${y2} ${x},${y2}`;
+  }
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  p.setAttribute("d", d); p.setAttribute("class", "e" + (e.hidden ? " hidden" : ""));
+  p.style.setProperty("--c", `var(${KINDS[a.kind].c})`);
+  svg.appendChild(p); e.el = p;
+});
+
+nodes.forEach((n) => {
+  const el = document.createElement("div");
+  el.className = "node" + (n.kind === "route" ? " mono" : "");
+  el.style.cssText = `left:${n.x}px;top:${n.y}px;width:${COL_W}px;--c:var(${KINDS[n.kind].c})`;
+  el.innerHTML = `<span></span>`; el.firstChild.textContent = n.label; el.title = n.label;
+  el.addEventListener("click", () => select(n.id));
+  canvas.appendChild(el); n.el = el;
+});
+
+// legend + journeys
+document.getElementById("legend").innerHTML = Object.values(KINDS).map((k) => `<span style="--c:var(${k.c})">${k.label}</span>`).join("");
+const jWrap = document.getElementById("journeys");
+JOURNEYS.forEach((j, i) => {
+  const b = document.createElement("button"); b.textContent = "▶ " + j.name;
+  b.addEventListener("click", () => runJourney(i)); jWrap.appendChild(b); j.btn = b;
+});
+
+// ---------- highlight
+function reach(start, map, key) {
+  const seen = new Set([start]), stack = [start];
+  while (stack.length) {
+    const id = stack.pop();
+    (map[id] || []).forEach((e) => { const nx = e[key]; if (!seen.has(nx)) { seen.add(nx); stack.push(nx); } });
+  }
+  return seen;
+}
+function paint(litNodes, litEdge, selId) {
+  canvas.classList.toggle("dimmed", !!litNodes);
+  nodes.forEach((n) => { n.el.classList.toggle("lit", !!litNodes && litNodes.has(n.id)); n.el.classList.toggle("sel", n.id === selId); });
+  edges.forEach((e) => e.el.classList.toggle("lit", !!litNodes && litEdge(e)));
+}
+const routeIds = nodes.filter((n) => n.kind === "route").map((n) => n.id);
+function select(id) {
+  setJourney(null);
+  const n = byId[id];
+  let lit;
+  if (n.global) lit = new Set([id, ...routeIds]);
+  else {
+    const down = reach(id, out, "to"), up = reach(id, inn, "from");
+    lit = new Set([...down, ...up]);
+    if ([...lit].some((x) => byId[x].kind === "route")) lit.add("client");
+  }
+  const down = n.global ? null : reach(id, out, "to"), up = n.global ? null : reach(id, inn, "from");
+  paint(lit, (e) => n.global ? false : (down.has(e.from) && down.has(e.to)) || (up.has(e.from) && up.has(e.to)), id);
+  showNode(n);
+  n.el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+}
+function setJourney(i) { JOURNEYS.forEach((j, k) => j.btn.classList.toggle("on", k === i)); }
+function runJourney(i) {
+  const j = JOURNEYS[i]; setJourney(i);
+  const ids = new Set(j.steps.map((s) => s[0]));
+  if (j.steps.some((s) => byId[s[0]].kind === "route")) { ids.add("client"); ids.add("cors"); }
+  paint(ids, (e) => ids.has(e.from) && ids.has(e.to), null);
+  const panel = document.getElementById("panel");
+  panel.innerHTML = `<span class="kind" style="--c:var(--accent)">User journey</span><h2>${j.name}</h2><h3>Steps</h3><ol>${j.steps.map(([id, t]) => `<li><div><a data-id="${id}">${esc(byId[id].label)}</a><span class="lbl">${esc(t)}</span></div></li>`).join("")}</ol>`;
+  byId[j.steps[0][0]].el.scrollIntoView({ block: "nearest", inline: "start", behavior: "smooth" });
+}
+function clearSel() { setJourney(null); paint(null, () => false, null); showIntro(); }
+
+// ---------- panel
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function linkList(list, key) {
+  const seen = new Set();
+  const items = list.filter((e) => !e.hidden && !seen.has(e[key]) && seen.add(e[key]));
+  if (!items.length) return `<p class="hint">—</p>`;
+  return `<ul>${items.map((e) => `<li><a data-id="${e[key]}">${esc(byId[e[key]].label)}</a>${e.label ? `<span class="lbl">${esc(e.label)}</span>` : ""}</li>`).join("")}</ul>`;
+}
+function showNode(n) {
+  const k = KINDS[n.kind];
+  let extra = "";
+  if (n.global) extra = `<h3>Used by</h3><p class="hint">Every HTTP route (${routeIds.length}) — highlighted on the board.</p>`;
+  else if (n.id === "cors") extra = `<h3>Applies to</h3><p class="hint">All ${routeIds.length} routes.</p>`;
+  document.getElementById("panel").innerHTML = `
+    <span class="kind" style="--c:var(${k.c})">${k.label}</span>
+    <h2>${esc(n.label)}</h2>
+    <div class="file">${esc(n.file)}</div>
+    <p>${esc(n.desc)}</p>
+    ${n.global || n.id === "cors" ? extra : `<h3>Calls / flows to →</h3>${linkList(out[n.id] || [], "to")}<h3>← Called by</h3>${linkList(inn[n.id] || [], "from")}`}`;
+}
+function showIntro() {
+  const count = (k) => nodes.filter((n) => n.kind === k).length;
+  document.getElementById("panel").innerHTML = `
+    <h2>How to read this</h2>
+    <p class="hint">Select any node — a page, a route, a view, a model — to light up everything it touches, upstream and downstream. Or press a <b>▶ journey</b> above to walk a real user flow step by step. Try <a data-id="v_pubdays">public_user_days()</a> to see how visibility is decided.</p>
+    <div class="stats"><div><b>${count("route")}</b><small>routes</small></div><div><b>${count("view")}</b><small>views</small></div><div><b>${count("model")}</b><small>models</small></div></div>
+    <h3>Request lifecycle</h3>
+    <ol>
+      <li><div>React page / component calls <a data-id="client">request()</a><span class="lbl">adds Authorization: Token &lt;key&gt;</span></div></li>
+      <li><div>Hits Django on <a data-id="gunicorn">Gunicorn</a><span class="lbl">CORS, security, WhiteNoise middleware</span></div></li>
+      <li><div><a data-id="token">TokenAuthentication</a> → <a data-id="isauth">IsAuthenticated</a><span class="lbl">or AllowAny on public endpoints</span></div></li>
+      <li><div>DRF view → serializer → model<span class="lbl">every query scoped to request.user</span></div></li>
+      <li><div><a data-id="pg">PostgreSQL</a> for rows, <a data-id="cloud">Cloudinary</a> for files</div></li>
+    </ol>`;
+}
+document.getElementById("panel").addEventListener("click", (ev) => { const a = ev.target.closest("a[data-id]"); if (a) select(a.dataset.id); });
+
+// ---------- search / controls
+const q = document.getElementById("q");
+function matches(term) {
+  term = term.trim().toLowerCase();
+  return term ? nodes.filter((n) => (n.label + " " + n.file + " " + n.id).toLowerCase().includes(term)) : [];
+}
+q.addEventListener("input", () => { const m = new Set(matches(q.value)); nodes.forEach((n) => n.el.classList.toggle("match", m.has(n))); });
+q.addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter") { const m = matches(q.value); if (m.length) select(m[0].id); }
+  if (ev.key === "Escape") { q.value = ""; q.dispatchEvent(new Event("input")); clearSel(); }
+});
+document.getElementById("clear").addEventListener("click", () => { q.value = ""; q.dispatchEvent(new Event("input")); clearSel(); });
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && document.activeElement !== q) clearSel(); });
+board.addEventListener("click", (ev) => { if (ev.target === board || ev.target === canvas) clearSel(); });
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+});
+
+showIntro();
+</script>
+</body>
+</html>
